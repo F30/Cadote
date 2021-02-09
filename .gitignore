@@ -1,1 +1,4 @@
 /llvm/build/
+/llvm/examples/**/*.bc
+/llvm/examples/**/*.ll
+/llvm/examples/**/*.o

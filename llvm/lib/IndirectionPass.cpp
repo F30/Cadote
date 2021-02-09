@@ -40,6 +40,8 @@ bool IndirectionPass::runOnModule(Module &mod) {
       }
     }
 
+    LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
+
     for (auto *&origCall : callsToWrap) {
       Function *callee = origCall->getCalledFunction();
 
