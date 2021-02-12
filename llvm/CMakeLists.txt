@@ -68,7 +68,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 add_library(
   IndirectionPass
   SHARED
-  "${CMAKE_CURRENT_SOURCE_DIR}/lib/IndirectionPass.cpp")
+  "${CMAKE_CURRENT_SOURCE_DIR}/lib/IndirectionPass.cc")
 
 target_include_directories(
   IndirectionPass
