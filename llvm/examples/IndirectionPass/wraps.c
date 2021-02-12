@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-void foo() {
+void foo_wrapped_() {
   printf("hello world\n");
 }
 
 int main() {
-  foo();
+  foo_wrapped_();
   return 0;
 }
 

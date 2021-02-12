@@ -9,6 +9,8 @@ using namespace llvm;
 
 #define DEBUG_TYPE "indirection-pass"
 
+#define FUNC_SUFFIX "_wrapped_"
+
 
 bool IndirectionPass::runOnModule(Module &mod) {
   bool didWrap = false;
@@ -33,7 +35,7 @@ bool IndirectionPass::runOnModule(Module &mod) {
 
         // TODO: Indirect calls
         if (callee) {
-          if (callee->getName() == "foo") {
+          if (callee->getName().endswith(FUNC_SUFFIX)) {
             callsToWrap.push_back(origCall);
           }
         }

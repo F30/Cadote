@@ -34,6 +34,7 @@ wraps: wraps_indir.o
 # Rust build based on https://medium.com/@squanderingtime/manually-linking-rust-binaries-to-support-out-of-tree-llvm-passes-8776b1d037a4
 
 wrapsteel-tmp: wrapsteel.rs
+	rm -rf wrapsteel-tmp
 	$(RUSTC) -C save-temps --emit llvm-ir --out-dir $@ $<
 	rm -f $@/*.no-opt.bc
 

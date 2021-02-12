@@ -1,5 +1,5 @@
 #[no_mangle]
-fn foo() {
+fn foo_wrapped_() {
   println!("Hello Rust!");
 }
 
@@ -10,5 +10,5 @@ fn wrapper(func: fn() -> ()) {
 }
 
 fn main() {
-  foo();
+  foo_wrapped_();
 }

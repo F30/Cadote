@@ -1,8 +1,7 @@
 use log::warn;
 
 #[no_mangle]
-fn foo() {
-  env_logger::init();
+fn foo_wrapped_() {
   println!("Hello Rust!");
 }
 
@@ -13,5 +12,6 @@ fn wrapper(func: fn() -> ()) {
 }
 
 fn main() {
-  foo();
+  env_logger::init();
+  foo_wrapped_();
 }
