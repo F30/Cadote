@@ -1,7 +1,11 @@
+#include <stdexcept>
+#include <string.h>
+
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
+#include "rustc_demangle.h"
 #include "IndirectionPass.h"
 
 
@@ -10,6 +14,7 @@ using namespace llvm;
 #define DEBUG_TYPE "indirection-pass"
 
 #define FUNC_SUFFIX "_wrapped_"
+#define DEMANGLED_LEN_MAX 200
 
 
 bool IndirectionPass::runOnModule(Module &mod) {
@@ -35,7 +40,21 @@ bool IndirectionPass::runOnModule(Module &mod) {
 
         // TODO: Indirect calls
         if (callee) {
-          if (callee->getName().endswith(FUNC_SUFFIX)) {
+          StringRef name = callee->getName();
+          char demangledName[DEMANGLED_LEN_MAX];
+
+          // Prefixes for old and new (v0) Rust mangled names, Linux-only
+          if (name.startswith("_ZN") || name.startswith("_R")) {
+            char *mangledName = strdup(name.str().c_str());
+            if (rustc_demangle(mangledName, demangledName, DEMANGLED_LEN_MAX) == 0) {
+              free(mangledName);
+              throw std::runtime_error("Demangling failed");
+            }
+            name = StringRef(demangledName);
+            free(mangledName);
+          }
+
+          if (name.endswith(FUNC_SUFFIX)) {
             callsToWrap.push_back(origCall);
           }
         }

@@ -1,4 +1,3 @@
-#[no_mangle]
 fn foo_wrapped_() {
   println!("Hello Rust!");
 }
