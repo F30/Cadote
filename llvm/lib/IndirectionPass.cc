@@ -95,9 +95,9 @@ bool IndirectionPass::runOnModule(Module &mod) {
 }
 
 
-PreservedAnalyses IndirectionPass::run(llvm::Module &M,
+PreservedAnalyses IndirectionPass::run(llvm::Module &m,
                                        llvm::ModuleAnalysisManager &) {
-  bool Changed = runOnModule(M);
+  bool Changed = runOnModule(m);
 
   return (Changed ? llvm::PreservedAnalyses::none()
                   : llvm::PreservedAnalyses::all());
@@ -110,11 +110,11 @@ llvmGetPassPluginInfo() {
     LLVM_PLUGIN_API_VERSION,
     "indirection-pass",
     LLVM_VERSION_STRING,
-    [](PassBuilder &PB) {
-      PB.registerPipelineParsingCallback(
-        [](StringRef Name, ModulePassManager &MPM, ...) {
-          if (Name == "indirection-pass") {
-            MPM.addPass(IndirectionPass());
+    [](PassBuilder &pb) {
+      pb.registerPipelineParsingCallback(
+        [](StringRef name, ModulePassManager &mpm, ...) {
+          if (name == "indirection-pass") {
+            mpm.addPass(IndirectionPass());
             return true;
           }
           return false;
