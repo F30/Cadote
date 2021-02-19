@@ -5,3 +5,15 @@ Cargo.lock
 /llvm/examples/**/*.ll
 /llvm/examples/**/*.o
 /llvm/examples/IndirectionPass/cargocult/target/
+
+/rust-enclave/bin/
+/rust-enclave/lib/
+/rust-enclave/app/target/
+/rust-enclave/enclave/target/
+/rust-enclave/**/*.so
+/rust-enclave/**/*_t.c
+/rust-enclave/**/*_t.h
+/rust-enclave/**/*_t.o
+/rust-enclave/**/*_u.c
+/rust-enclave/**/*_u.h
+/rust-enclave/**/*_u.o
