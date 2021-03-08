@@ -42,6 +42,6 @@ target/debug/deps/cargocult: target/debug/deps
 	make target_obj
 	make cargocult_bin
 
-cargocult_bin: target/debug/deps/*_indir.bc
+cargocult_bin: target/debug/deps/*_indir.o
 	# TODO: Adding all Rust std rlibs in a linking group works, but is not optimal performance-wise
 	$(CLANG) -lresolv -lc -lm -ldl -lpthread -o target/debug/deps/cargocult $^ -Wl,--start-group target/debug/deps/*.rlib -Wl,--end-group -Wl,--start-group $(shell find $(RUST_DIR)/lib/rustlib -name '*.rlib') -Wl,--end-group

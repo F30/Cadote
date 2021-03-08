@@ -51,6 +51,6 @@ wrapsteel: clean_rs wrapsteel-tmp
 	make wrapsteel_obj
 	make wrapsteel_bin
 
-wrapsteel_bin: wrapsteel-tmp/*_indir.bc
+wrapsteel_bin: wrapsteel-tmp/*_indir.o
 	# TODO: Adding all Rust std rlibs in a linking group works, but is not optimal performance-wise
 	$(CLANG) -lresolv -lc -lm -ldl -lpthread -o wrapsteel $^ -Wl,--start-group $(shell find $(RUST_DIR)/lib/rustlib -name '*.rlib') -Wl,--end-group
