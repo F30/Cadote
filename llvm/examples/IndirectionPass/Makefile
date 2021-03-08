@@ -1,5 +1,5 @@
 LLVM_DIR ?= /usr/local/lib/llvm-11-debug
-RUST_DIR ?= $(HOME)/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
+RUST_DIR ?= $(HOME)/.rustup/toolchains/nightly-2020-10-25-x86_64-unknown-linux-gnu
 
 CLANG := $(LLVM_DIR)/bin/clang
 RUSTC := $(RUST_DIR)/bin/rustc
