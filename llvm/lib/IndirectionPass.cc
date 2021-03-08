@@ -68,7 +68,14 @@ bool IndirectionPass::runOnModule(Module &mod) {
 
       // TODO: Indirect calls
       if (callee) {
-        Type *typeParams[] = {callee->getFunctionType()->getPointerTo()};
+        // Pass callee as first parameter to wrapper
+        std::vector<Type *> typeParams = { callee->getFunctionType()->getPointerTo() };
+        std::vector<Value *> callParams = { callee };
+
+        for (auto operand : origCall->operand_values()) {
+          typeParams.push_back(operand->getType());
+          callParams.push_back(operand);
+        }
 
         FunctionType *wrapperFuncType = FunctionType::get(
           Type::getVoidTy(func.getContext()),
@@ -77,7 +84,6 @@ bool IndirectionPass::runOnModule(Module &mod) {
         );
         FunctionCallee wrapperFunc = mod.getOrInsertFunction("wrapper", wrapperFuncType);
 
-        Value *callParams[] = {callee};
         CallInst *wrapperCall = CallInst::Create(
           wrapperFunc,
           callParams,
