@@ -7,14 +7,17 @@ OPT := $(LLVM_DIR)/bin/opt -debug
 LLC := $(LLVM_DIR)/bin/llc
 
 
-.PHONY: all clean wrapsteel_indir wrapsteel_obj
+.PHONY: all clean clean_rs wrapsteel_indir wrapsteel_obj
 
 all: wraps wrapsteel
 
-clean:
+clean: clean_rs
 	rm -f *.bc *.o
+	rm -f wraps
+
+clean_rs:
 	rm -rf wrapsteel-tmp
-	rm -f wraps wrapsteel
+	rm -f wrapsteel
 
 
 %.o: %.bc
@@ -42,7 +45,7 @@ wrapsteel_indir: $(patsubst %.bc,%_indir.bc,$(wildcard wrapsteel-tmp/*.bc))
 
 wrapsteel_obj: $(patsubst %.bc,%.o,$(wildcard wrapsteel-tmp/*_indir.bc))
 
-wrapsteel: wrapsteel-tmp
+wrapsteel: clean_rs wrapsteel-tmp
 	# Call helper targets in a new Make instances, forcing prerequisites to be re-evaluated
 	make wrapsteel_indir
 	make wrapsteel_obj
