@@ -1,5 +1,6 @@
 #include <stdexcept>
-#include <string.h>
+#include <sstream>
+#include <string>
 
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Passes/PassBuilder.h"
@@ -13,21 +14,74 @@ using namespace llvm;
 
 #define DEBUG_TYPE "indirection-pass"
 
-#define FUNC_SUFFIX "_wrapped_"
+#define TO_WRAP_SUFFIX "_wrapped_"
+#define WRAPPER_PREFIX "_indirection_wrapper_"
 #define DEMANGLED_LEN_MAX 200
+
+
+static FunctionCallee getWrapper(CallBase *wrappedCall) {
+  Function *wrappedFunc = wrappedCall->getCalledFunction();
+  Module *mod = wrappedFunc->getParent();
+
+  std::stringstream wrapperName;
+  wrapperName << WRAPPER_PREFIX << wrappedFunc->getName().str();
+
+  Function *wrapperFunc = mod->getFunction(wrapperName.str());
+  if (wrapperFunc) {
+    // Wrapper has already been created (in previous calls)
+    return wrapperFunc;
+  }
+
+  FunctionType *funcType = wrappedFunc->getFunctionType();
+  // This will always insert a new Function, because we already checked for existance above
+  FunctionCallee wrapperFuncCallee = mod->getOrInsertFunction(wrapperName.str(), funcType);
+  wrapperFunc = static_cast<Function *>(wrapperFuncCallee.getCallee());
+
+  AttributeList wrappedAttrs = wrappedFunc->getAttributes();
+  for (size_t i = 0; i < wrapperFunc->arg_size(); ++i) {
+    AttrBuilder builder = AttrBuilder(wrappedAttrs.getParamAttributes(i));
+    wrapperFunc->addParamAttrs(i, builder);
+  }
+
+  // New Function doesn't appear to have a real BasicBlock so far, getEntryBlock() only gives a sentinel
+  BasicBlock *wrapperBlock = BasicBlock::Create(
+    mod->getContext(),
+    "call_wrapped",
+    wrapperFunc,
+    nullptr
+  );
+
+  std::vector<Value *> wrappedArgs;
+  for (auto arg = wrapperFunc->arg_begin(); arg != wrapperFunc->arg_end(); ++arg) {
+    wrappedArgs.push_back(arg);
+  }
+  CallInst::Create(
+    wrappedFunc,
+    wrappedArgs,
+    "",    // Not allowed to assign a name here
+    wrapperBlock
+  );
+
+  ReturnInst::Create(
+    mod->getContext(),
+    wrapperBlock
+  );
+
+  return wrapperFunc;
+}
 
 
 bool IndirectionPass::runOnModule(Module &mod) {
   bool didWrap = false;
 
+  // First generate list of calls to be wrapped in order to not change a Module, Function or BasicBlock
+  // while iterating over it
+  std::vector<CallBase *> callsToWrap;
+
   for (auto &func : mod) {
     if (func.isDeclaration()) {
       continue;
     }
-
-    // First generate list of calls to be wrapped, since modification of a BasicBlock is not supported during
-    // iteration over it: https://lists.llvm.org/pipermail/llvm-dev/2011-May/039970.html
-    std::vector<CallBase *> callsToWrap;
 
     for (auto &bblock : func) {
       for (auto &inst : bblock) {
@@ -54,46 +108,34 @@ bool IndirectionPass::runOnModule(Module &mod) {
             free(mangledName);
           }
 
-          if (name.endswith(FUNC_SUFFIX)) {
+          if (name.endswith(TO_WRAP_SUFFIX)) {
             callsToWrap.push_back(origCall);
           }
         }
       }
     }
+  }
 
-    LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
+  LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
 
-    for (auto *&origCall : callsToWrap) {
-      Function *callee = origCall->getCalledFunction();
-
-      // TODO: Indirect calls
-      if (callee) {
-        // Pass callee as first parameter to wrapper
-        std::vector<Type *> typeParams = { callee->getFunctionType()->getPointerTo() };
-        std::vector<Value *> callParams = { callee };
-
-        for (auto operand : origCall->operand_values()) {
-          typeParams.push_back(operand->getType());
-          callParams.push_back(operand);
-        }
-
-        FunctionType *wrapperFuncType = FunctionType::get(
-          Type::getVoidTy(func.getContext()),
-          typeParams,
-          false
-        );
-        FunctionCallee wrapperFunc = mod.getOrInsertFunction("wrapper", wrapperFuncType);
-
-        CallInst *wrapperCall = CallInst::Create(
-          wrapperFunc,
-          callParams,
-          "",    // Not allowed to assign a name in this case
-          static_cast<Instruction *>(nullptr)
-        );
-        ReplaceInstWithInst(origCall, wrapperCall);
-
-        didWrap = true;
+  for (auto *&origCall : callsToWrap) {
+    // TODO: Indirect calls
+    if (origCall->getCalledFunction()) {
+      std::vector<Value *> callArgs;
+      for (auto arg = origCall->arg_begin(); arg != origCall->arg_end(); ++arg) {
+        callArgs.push_back(arg->get());
       }
+
+      FunctionCallee wrapperFunc = getWrapper(origCall);
+      CallInst *wrapperCall = CallInst::Create(
+        wrapperFunc,
+        callArgs,
+        "",    // Not allowed to assign a name here
+        static_cast<Instruction *>(nullptr)
+      );
+      ReplaceInstWithInst(origCall, wrapperCall);
+
+      didWrap = true;
     }
   }
 
