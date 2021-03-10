@@ -1,0 +1,16 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "llvm-linux",
+            "includePath": [
+                "${workspaceFolder}/llvm/include/**",
+                "${workspaceFolder}/llvm/vendor/**",
+                "/usr/local/lib/llvm-11-debug/include"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++14"
+        }
+    ]
+}
