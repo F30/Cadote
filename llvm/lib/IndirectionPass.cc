@@ -157,17 +157,14 @@ bool IndirectionPass::runOnModule(Module &mod) {
 }
 
 
-PreservedAnalyses IndirectionPass::run(llvm::Module &m,
-                                       llvm::ModuleAnalysisManager &) {
-  bool Changed = runOnModule(m);
-
-  return (Changed ? llvm::PreservedAnalyses::none()
+PreservedAnalyses IndirectionPass::run(llvm::Module &m, llvm::ModuleAnalysisManager &) {
+  bool changed = runOnModule(m);
+  return (changed ? llvm::PreservedAnalyses::none()
                   : llvm::PreservedAnalyses::all());
 }
 
 
-extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
-llvmGetPassPluginInfo() {
+extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo llvmGetPassPluginInfo() {
   return {
     LLVM_PLUGIN_API_VERSION,
     "indirection-pass",

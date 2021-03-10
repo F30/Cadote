@@ -6,8 +6,7 @@
 
 struct IndirectionPass : public llvm::PassInfoMixin<IndirectionPass> {	
   public:
-    llvm::PreservedAnalyses run(llvm::Module &M,
-                                llvm::ModuleAnalysisManager &);
+    llvm::PreservedAnalyses run(llvm::Module &M, llvm::ModuleAnalysisManager &);
     bool runOnModule(llvm::Module &M);
 };
 
