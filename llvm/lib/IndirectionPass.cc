@@ -19,8 +19,8 @@ using namespace llvm;
 #define DEMANGLED_LEN_MAX 200
 
 
-static FunctionCallee getWrapper(CallBase *wrappedCall) {
-  Function *wrappedFunc = wrappedCall->getCalledFunction();
+static FunctionCallee getWrapper(CallBase *callToWrap) {
+  Function *wrappedFunc = callToWrap->getCalledFunction();
   Module *mod = wrappedFunc->getParent();
 
   std::stringstream wrapperName;
@@ -37,10 +37,14 @@ static FunctionCallee getWrapper(CallBase *wrappedCall) {
   FunctionCallee wrapperFuncCallee = mod->getOrInsertFunction(wrapperName.str(), funcType);
   wrapperFunc = static_cast<Function *>(wrapperFuncCallee.getCallee());
 
+  // Adopt param and return attributes
   AttributeList wrappedAttrs = wrappedFunc->getAttributes();
   for (size_t i = 0; i < wrapperFunc->arg_size(); ++i) {
     AttrBuilder builder = AttrBuilder(wrappedAttrs.getParamAttributes(i));
     wrapperFunc->addParamAttrs(i, builder);
+  } {
+    AttrBuilder builder = AttrBuilder(wrappedAttrs.getRetAttributes());
+    wrapperFunc->addAttributes(AttributeList::ReturnIndex, builder);
   }
 
   // New Function doesn't appear to have a real BasicBlock so far, getEntryBlock() only gives a sentinel
@@ -55,17 +59,27 @@ static FunctionCallee getWrapper(CallBase *wrappedCall) {
   for (auto arg = wrapperFunc->arg_begin(); arg != wrapperFunc->arg_end(); ++arg) {
     wrappedArgs.push_back(arg);
   }
-  CallInst::Create(
+  CallInst *wrappedCall = CallInst::Create(
     wrappedFunc,
     wrappedArgs,
     "",    // Not allowed to assign a name here
     wrapperBlock
   );
 
-  ReturnInst::Create(
-    mod->getContext(),
-    wrapperBlock
-  );
+  // "[...] only one instance of a particular type is ever created. Thus seeing if two types are equal is a
+  // matter of doing a trivial pointer comparison."
+  if (wrappedFunc->getReturnType() == Type::getVoidTy(mod->getContext())) {
+    ReturnInst::Create(
+      mod->getContext(),
+      wrapperBlock
+    );
+  } else {
+    ReturnInst::Create(
+      mod->getContext(),
+      wrappedCall,
+      wrapperBlock
+    );
+  }
 
   return wrapperFunc;
 }
