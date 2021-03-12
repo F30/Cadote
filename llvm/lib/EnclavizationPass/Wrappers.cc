@@ -9,6 +9,7 @@
 #include "llvm/IR/Value.h"
 
 #include "EnclavizationPass/Constants.h"
+#include "EnclavizationPass/Wrappers.h"
 
 
 using namespace llvm;
@@ -45,7 +46,7 @@ FunctionCallee getWrapper(CallBase *callToWrap) {
   // New Function doesn't appear to have a real BasicBlock so far, getEntryBlock() only gives a sentinel
   BasicBlock *wrapperBlock = BasicBlock::Create(
     mod->getContext(),
-    "call_wrapped",
+    "call_enclaved",
     wrapperFunc,
     nullptr
   );
