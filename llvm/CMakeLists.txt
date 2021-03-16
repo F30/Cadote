@@ -87,6 +87,7 @@ add_library(
   EnclavizationPass
   SHARED
   "${CMAKE_CURRENT_SOURCE_DIR}/lib/EnclavizationPass.cc"
+  "${CMAKE_CURRENT_SOURCE_DIR}/lib/EnclavizationPass/Export.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/lib/EnclavizationPass/Wrappers.cc"
 )
 

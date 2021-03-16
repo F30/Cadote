@@ -15,7 +15,8 @@
 
 #include "rustc_demangle.h"
 #include "EnclavizationPass.h"
-#include "EnclavizationPass/Constants.h"
+#include "EnclavizationPass/Export.h"
+#include "EnclavizationPass/Names.h"
 #include "EnclavizationPass/Wrappers.h"
 
 
@@ -73,6 +74,12 @@ bool EnclavizationPass::runOnModule(Module &mod) {
 
   LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
 
+  // Write EDL file to current working directory
+  std::string edlFileName = mod.getName().str();
+  replaceFileExtension(edlFileName, "edl");
+  EdlFile edlFile(edlFileName);
+  LLVM_DEBUG(dbgs() << "Writing EDL definitions to " << edlFileName << "\n");
+
   for (auto *&origCall : callsToWrap) {
     // TODO: Indirect calls
     if (origCall->getCalledFunction()) {
@@ -81,14 +88,15 @@ bool EnclavizationPass::runOnModule(Module &mod) {
         callArgs.push_back(arg->get());
       }
 
-      FunctionCallee wrapperFunc = getWrapper(origCall);
-      CallInst *wrapperCall = CallInst::Create(
-        wrapperFunc,
+      FunctionCallee pregateFunc = getPregate(origCall, edlFile);
+
+      CallInst *pregateCall = CallInst::Create(
+        pregateFunc,
         callArgs,
         "",    // Not allowed to assign a name here
         static_cast<Instruction *>(nullptr)
       );
-      ReplaceInstWithInst(origCall, wrapperCall);
+      ReplaceInstWithInst(origCall, pregateCall);
 
       didWrap = true;
     }

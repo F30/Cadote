@@ -5,7 +5,9 @@
 #include "llvm/IR/InstrTypes.h"
 
 
-llvm::FunctionCallee getWrapper(llvm::CallBase *callToWrap);
+llvm::FunctionCallee getPregate(llvm::CallBase *, EdlFile &);
+
+llvm::FunctionCallee getPostgate(llvm::CallBase *, EdlFile &);
 
 
 #endif
