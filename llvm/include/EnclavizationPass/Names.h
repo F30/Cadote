@@ -32,14 +32,4 @@ inline std::string getPostgateName(llvm::Function *func) {
   return entranceName.str();
 }
 
-/*
- * Adapted from: https://www.oreilly.com/library/view/c-cookbook/0596007612/ch10s17.html
- */
-inline void replaceFileExtension(std::string &s, const std::string &newExt) {
-  std::string::size_type i = s.rfind('.', s.length());
-  if (i != std::string::npos) {
-    s.replace(i+1, newExt.length(), newExt);
-  }
-}
-
 #endif

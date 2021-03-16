@@ -75,8 +75,7 @@ bool EnclavizationPass::runOnModule(Module &mod) {
   LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
 
   // Write EDL file to current working directory
-  std::string edlFileName = mod.getName().str();
-  replaceFileExtension(edlFileName, "edl");
+  std::string edlFileName = "enclavization.edl";
   EdlFile edlFile(edlFileName);
   LLVM_DEBUG(dbgs() << "Writing EDL definitions to " << edlFileName << "\n");
 
