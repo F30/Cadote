@@ -2,6 +2,7 @@
 name = "simpleenclave"
 version = "0.0.1"
 authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
+edition = "2018"
 
 [lib]
 crate-type = ["staticlib"]
