@@ -1,6 +1,7 @@
 Cargo.lock
 
 /llvm/build/
+/llvm/examples/**/build/
 /llvm/examples/**/*.bc
 /llvm/examples/**/*.ll
 /llvm/examples/**/*.o
