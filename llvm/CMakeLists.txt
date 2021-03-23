@@ -82,23 +82,3 @@ target_link_libraries(
   IndirectionPass
   "${CMAKE_CURRENT_SOURCE_DIR}/vendor/librustc_demangle.a"
 )
-
-add_library(
-  EnclavizationPass
-  SHARED
-  "${CMAKE_CURRENT_SOURCE_DIR}/lib/EnclavizationPass.cc"
-  "${CMAKE_CURRENT_SOURCE_DIR}/lib/EnclavizationPass/Export.cc"
-  "${CMAKE_CURRENT_SOURCE_DIR}/lib/EnclavizationPass/Wrappers.cc"
-)
-
-target_include_directories(
-  EnclavizationPass
-  PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  "${CMAKE_CURRENT_SOURCE_DIR}/vendor"
-)
-
-target_link_libraries(
-  EnclavizationPass
-  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/librustc_demangle.a"
-)
