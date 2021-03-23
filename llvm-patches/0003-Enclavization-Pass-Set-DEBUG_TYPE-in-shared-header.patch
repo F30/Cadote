@@ -1,0 +1,40 @@
+From a8ecd1f0fff5ecd6158e4fd88859cd10a414a25a Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 23 Mar 2021 17:37:26 +0000
+Subject: [PATCH 3/3] Enclavization Pass: Set `DEBUG_TYPE` in shared header
+
+To make it usable in all sources files.
+---
+ llvm/include/llvm/Transforms/Utils/Enclavization/Names.h | 2 ++
+ llvm/lib/Transforms/Utils/EnclavizationPass.cpp          | 2 --
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h
+index b978d042a4e0..0f9bfeaf6a4d 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h
+@@ -7,6 +7,8 @@
+ #include "llvm/IR/Function.h"
+ 
+ 
++#define DEBUG_TYPE "enclavization-pass"
++
+ #define TO_WRAP_SUFFIX "_enclaved_"
+ #define PRE_GATE_PREFIX "_enclave_pregate_"
+ #define POST_GATE_PREFIX "_enclave_postgate_"
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationPass.cpp
+index 28c2dce79499..fd74dbc703a7 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationPass.cpp
+@@ -25,8 +25,6 @@
+ 
+ using namespace llvm;
+ 
+-#define DEBUG_TYPE "enclavization-pass"
+-
+ #define DEMANGLED_LEN_MAX 200
+ 
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,25 @@
+From 4c3f864c5e0430b28860f597c5327b800897cf76 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 23 Mar 2021 17:01:48 +0000
+Subject: [PATCH 2/3] Enclavization Pass: Fix typo
+
+---
+ llvm/include/llvm/Transforms/Utils/Enclavization/Names.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h
+index ffe321bb8867..b978d042a4e0 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Names.h
+@@ -9,7 +9,7 @@
+ 
+ #define TO_WRAP_SUFFIX "_enclaved_"
+ #define PRE_GATE_PREFIX "_enclave_pregate_"
+-#define POST_GATE_PREFIX "_enclave_postgate"
++#define POST_GATE_PREFIX "_enclave_postgate_"
+ 
+ 
+ /*
+-- 
+2.25.1
+
