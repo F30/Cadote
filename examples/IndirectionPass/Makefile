@@ -24,7 +24,7 @@ clean_rs:
 	$(LLC) --filetype obj -o $@ $<
 
 %_indir.bc: %.bc
-	$(OPT) --load-pass-plugin ../../build/lib/libIndirectionPass.so --passes indirection-pass -o $@ $<
+	$(OPT) --load-pass-plugin ../../llvm-pass/build/lib/libIndirectionPass.so --passes indirection-pass -o $@ $<
 
 
 wraps.bc: wraps.c

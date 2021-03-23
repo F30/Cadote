@@ -1,11 +1,12 @@
 Cargo.lock
 
-/llvm/build/
-/llvm/examples/**/build/
-/llvm/examples/**/*.bc
-/llvm/examples/**/*.ll
-/llvm/examples/**/*.o
-/llvm/examples/IndirectionPass/cargocult/target/
+/llvm-pass/build/
+
+/examples/**/build/
+/examples/**/*.bc
+/examples/**/*.ll
+/examples/**/*.o
+/examples/IndirectionPass/cargocult/target/
 
 /rust-enclave/bin/
 /rust-enclave/lib/

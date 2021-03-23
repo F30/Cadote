@@ -4,8 +4,8 @@
         {
             "name": "llvm-linux",
             "includePath": [
-                "${workspaceFolder}/llvm/include/**",
-                "${workspaceFolder}/llvm/vendor/**",
+                "${workspaceFolder}/llvm-pass/include/**",
+                "${workspaceFolder}/llvm-pass/vendor/**",
                 "/usr/local/lib/llvm-11-debug/include"
             ],
             "compilerPath": "/usr/bin/gcc",

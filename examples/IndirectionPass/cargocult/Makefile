@@ -1,6 +1,6 @@
 LLVM_DIR ?= /usr/local/lib/llvm-11-debug
 RUST_DIR ?= $(HOME)/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
-PASS_DIR ?= ../../../build/lib
+PASS_DIR ?= ../../../llvm-pass/build/lib
 
 # Direkt calling `$(RUST_DIR)/bin/cargo` will use rustc from the wrong (non-nightly) toolchain
 CARGO := cargo +nightly
