@@ -13,6 +13,7 @@ clean:
 
 build/target: $(shell find src -type f -name '*.rs')
 	CARGO_TARGET_DIR=build/target $(CARGO) rustc -- -C passes=enclavization-pass
+	#CARGO_TARGET_DIR=build/target $(CARGO) rustc -- -C passes=enclavization-pass -C llvm-args=-debug -C codegen-units=1 2>build/output
 
 build/$(MAIN_CRATE): build/target
 	cp build/target/debug/$(MAIN_CRATE) $@
