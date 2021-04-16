@@ -1,0 +1,226 @@
+From 4c4aec924eaff0544c1fd2a6a1c48f24a760688f Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Fri, 16 Apr 2021 14:59:51 +0000
+Subject: [PATCH 9/9] Enclavization Pass: Add support for structs to EDL export
+
+---
+ .../Transforms/Utils/Enclavization/Export.h   | 18 ++--
+ .../Transforms/Utils/Enclavization/Export.cpp | 84 ++++++++++++++-----
+ .../Utils/Enclavization/Wrappers.cpp          |  2 +-
+ 3 files changed, 78 insertions(+), 26 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+index ee86f2fb061d..0cd7a3874277 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+@@ -3,8 +3,10 @@
+ 
+ #include <fstream>
+ #include <string>
++#include <vector>
+ 
+ #include "llvm/IR/Argument.h"
++#include "llvm/IR/DerivedTypes.h"
+ #include "llvm/IR/Function.h"
+ #include "llvm/IR/Type.h"
+ 
+@@ -13,15 +15,19 @@
+ 
+ class EdlFile {
+   public:
+-    EdlFile(std::string path);
++    EdlFile(std::string &path);
+     ~EdlFile();
+-    void addFunction(llvm::Function *);
++    void addTrustedFunction(llvm::Function *);
++    std::string addStruct(llvm::StructType *);
+ 
+-   private:
+-     std::string getEdlType(llvm::Type *, llvm::LLVMContext &);
+-     std::vector<std::string> getEdlAttributes(llvm::Argument *);
++  private:
++    void writeFile();
++    std::string getEdlType(llvm::Type *, llvm::LLVMContext &);
++    std::vector<std::string> getEdlAttributes(llvm::Argument *);
+ 
+-     std::ofstream fstream;
++    std::string filePath;
++    std::vector<std::string> structs;
++    std::vector<std::string> trustedFuncs;
+ };
+ 
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index d08e34860fb3..a323a9542117 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -2,11 +2,13 @@
+ #include <ios>
+ #include <sstream>
+ #include <string>
++#include <vector>
+ 
+ #include "llvm/IR/Argument.h"
+ #include "llvm/IR/Attributes.h"
+ #include "llvm/IR/Function.h"
+ #include "llvm/IR/Type.h"
++#include "llvm/Support/Casting.h"
+ #include <llvm/Support/raw_ostream.h>
+ 
+ #include "llvm/Transforms/Utils/Enclavization/Export.h"
+@@ -18,8 +20,16 @@ using namespace llvm;
+ #define EDL_PTR_REPLACEMENT "uint64_t"
+ 
+ 
+-EdlFile::EdlFile(std::string path) {
+-  fstream = std::ofstream(path, std::ios_base::trunc);
++EdlFile::EdlFile(std::string &path) {
++  filePath = path;
++}
++
++EdlFile::~EdlFile() {
++  writeFile();
++}
++
++void EdlFile::writeFile() {
++  std::ofstream fstream(filePath, std::ios_base::trunc);
+   fstream.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+ 
+   fstream << "enclave {\n";
+@@ -28,34 +38,66 @@ EdlFile::EdlFile(std::string path) {
+   fstream << "from \"sgx_stdio.edl\" import *;\n";
+   fstream << "from \"sgx_backtrace.edl\" import *;\n";
+   fstream << "from \"sgx_tstdc.edl\" import *;\n";
++  fstream << "\n";
+ 
++  for (auto entry : structs) {
++    fstream << entry;
++  }
+   fstream << "\n";
++
+   fstream << "trusted {\n";
+-}
+-
+-EdlFile::~EdlFile() {
++  for (auto entry : trustedFuncs) {
++    fstream << entry;
++  }
+   fstream << "};\n";
++
+   fstream << "};\n";
+ 
+   fstream.flush();
+   fstream.close();
+ }
+ 
+-void EdlFile::addFunction(llvm::Function *postgateFunc) {
+-  fstream << "public ";
++std::string EdlFile::addStruct(StructType *structTy) {
++  static unsigned int structCount = 0;
++
++  std::string structName;
++  raw_string_ostream nameStream(structName);
++  nameStream << "struct struct" << structCount++;
++
++  std::string structEntry;
++  raw_string_ostream entryStream(structEntry);
++
++  entryStream << structName << " {\n";
++  for (unsigned int i = 0; i < structTy->getNumElements(); ++i) {
++    Type *elem = structTy->getElementType(i);
++    entryStream << getEdlType(elem, structTy->getContext()) << " ";
++    entryStream << "elem" << i << ";\n";
++  }
++  entryStream << "};\n";
++
++  structs.push_back(structEntry);
++
++  return structName;
++}
++
++void EdlFile::addTrustedFunction(Function *postgateFunc) {
++  std::string funcEntry;
++  raw_string_ostream entryStream(funcEntry);
++
++  entryStream << "public ";
+   if (postgateFunc->getReturnType()->isPointerTy()) {
+     // In most cases, pointers returned from functions will point back to input values (i.e. outside the
+     // enclave) because of lifetimes, so this is hacky but safe
+     // TODO: Heap allocations, which are an exemption from that
+-    fstream << EDL_PTR_REPLACEMENT;
++    entryStream << EDL_PTR_REPLACEMENT;
+   } else {
+-    fstream << getEdlType(postgateFunc->getReturnType(), postgateFunc->getContext());
++    entryStream << getEdlType(postgateFunc->getReturnType(), postgateFunc->getContext());
+   }
+-  fstream << " " << postgateFunc->getName().str() << "(";
++  entryStream << " " << postgateFunc->getName().str() << "(";
+ 
+   for (size_t i = 0; i < postgateFunc->arg_size(); ++i) {
+     if (i != 0) {
+-      fstream << ", ";
++      entryStream << ", ";
+     }
+ 
+     auto arg = postgateFunc->getArg(i);
+@@ -64,32 +106,36 @@ void EdlFile::addFunction(llvm::Function *postgateFunc) {
+     if (argType->isPointerTy()) {
+       auto edlAttrs = getEdlAttributes(arg);
+       if (!edlAttrs.empty()) {
+-        fstream << "[";
++        entryStream << "[";
+ 
+         for (auto attr = edlAttrs.begin(); attr != edlAttrs.end(); ++attr) {
+           if (attr != edlAttrs.begin()) {
+-            fstream << ", ";
++            entryStream << ", ";
+           }
+-          fstream << *attr;
++          entryStream << *attr;
+         }
+ 
+-        fstream << "] ";
++        entryStream << "] ";
+       }
+     }
+ 
+     auto edlType = getEdlType(arg->getType(), postgateFunc->getContext());
+-    fstream << edlType << " arg" << i;
++    entryStream << edlType << " arg" << i;
+   }
+ 
+-  fstream << ");\n";
+-  fstream.flush();
++  entryStream << ");\n";
++
++  trustedFuncs.push_back(funcEntry);
+ }
+ 
+ std::string EdlFile::getEdlType(Type *llvmType, LLVMContext &context) {
+   std::string edlType;
+   raw_string_ostream typeStream(edlType);
+ 
+-  if (llvmType->isPointerTy()) {
++  if (llvmType->isStructTy()) {
++    typeStream << addStruct(dyn_cast<StructType>(llvmType));
++  }
++  else if (llvmType->isPointerTy()) {
+     auto pointedToType = llvmType->getPointerElementType();
+     // rustc will never give us struct or array types as arguments, only pointers to them
+     if (pointedToType->isStructTy() || pointedToType->isArrayTy()) {
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index b28cbd9a9517..afe90216b2c3 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -297,7 +297,7 @@ Function *getPostgateImpl(CallBase *callToWrap, EdlFile &edlFile) {
+     return postgateFunc;
+   }
+ 
+-  edlFile.addFunction(postgateFunc);
++  edlFile.addTrustedFunction(postgateFunc);
+ 
+   BasicBlock *postgateBlock = BasicBlock::Create(
+     mod->getContext(),
+-- 
+2.25.1
+
