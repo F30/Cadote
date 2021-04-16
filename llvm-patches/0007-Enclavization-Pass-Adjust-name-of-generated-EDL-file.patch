@@ -1,0 +1,25 @@
+From e0a04b5e3e559f4f262a2b10a1448adab02fdf86 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 6 Apr 2021 15:48:05 +0000
+Subject: [PATCH 7/8] Enclavization Pass: Adjust name of generated EDL file
+
+---
+ llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index 99ede97eab07..410c82dc46a8 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -33,7 +33,7 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+   LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
+ 
+   // Write EDL file to current working directory
+-  std::string edlFileName = "enclavization.edl";
++  std::string edlFileName = "enclave.edl";
+   EdlFile edlFile(edlFileName);
+   LLVM_DEBUG(dbgs() << "Writing EDL definitions to " << edlFileName << "\n");
+ 
+-- 
+2.25.1
+

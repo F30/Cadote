@@ -3,7 +3,10 @@ name = "wrapsteel"
 version = "0.0.1"
 authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
 edition = "2018"
+build = "../../support/build.rs"
+
+[features]
+enclavization_bin = []
 
 [dependencies]
-log = "0.4"
-env_logger = "0.8.2"
+cadote_runtime = { path = "../../support/cadote_runtime" }

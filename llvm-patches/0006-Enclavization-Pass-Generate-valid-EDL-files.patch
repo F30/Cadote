@@ -1,0 +1,45 @@
+From bb167294b0dd55ac22a395f1cdf14b342c8e2144 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 6 Apr 2021 15:46:39 +0000
+Subject: [PATCH 6/8] Enclavization Pass: Generate valid EDL files
+
+A pointer is either completely `user_check`ed, or not at all.
+---
+ .../Transforms/Utils/Enclavization/Export.cpp | 20 +++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index db43326f6852..1fe1f900ec5d 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -127,17 +127,17 @@ std::string EdlFile::getEdlType(Type *llvmType, LLVMContext &context) {
+ std::vector<std::string> EdlFile::getEdlAttributes(Argument *arg) {
+     std::vector<std::string> attrs;
+ 
+-    if (arg->hasAttribute(Attribute::AttrKind::StructRet)) {
+-      attrs.push_back("out");
+-    }
+-    if (arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
+-      // LLVM's semantics only guarantee that "the function does not write through this pointer argument,
+-      // even though it may write to the memory that the pointer points to"
+-      // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
+-      attrs.push_back("in");
+-    }
+-
+     if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
++      if (arg->hasAttribute(Attribute::AttrKind::StructRet)) {
++        attrs.push_back("out");
++      }
++      if (arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
++        // LLVM's semantics only guarantee that "the function does not write through this pointer argument,
++        // even though it may write to the memory that the pointer points to"
++        // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
++        attrs.push_back("in");
++      }
++
+       uint64_t numBytes = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+       std::stringstream attrStream;
+       attrStream << "size=" << numBytes;
+-- 
+2.25.1
+
