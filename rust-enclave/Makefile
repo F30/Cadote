@@ -24,14 +24,14 @@ SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
 
 ifeq ($(SGX_DEBUG), 1)
 ifeq ($(SGX_PRERELEASE), 1)
-	$(error Cannot set SGX_DEBUG and SGX_PRERELEASE at the same time!)
+$(error Cannot set SGX_DEBUG and SGX_PRERELEASE at the same time!)
 endif
 endif
 
 ifeq ($(SGX_DEBUG), 1)
-	SGX_COMMON_CFLAGS += -O0 -g
+SGX_COMMON_CFLAGS += -O0 -g
 else
-	SGX_COMMON_CFLAGS += -O2
+SGX_COMMON_CFLAGS += -O2
 endif
 
 SGX_COMMON_CFLAGS += -fstack-protector
@@ -39,11 +39,11 @@ SGX_COMMON_CFLAGS += -fstack-protector
 
 #### Enclave Settings ####
 ifneq ($(SGX_MODE), HW)
-	trts_library_name := sgx_trts_sim
-	service_library_name := sgx_tservice_sim
+trts_library_name := sgx_trts_sim
+service_library_name := sgx_tservice_sim
 else
-	trts_library_name := sgx_trts
-	service_library_name := sgx_tservice
+trts_library_name := sgx_trts
+service_library_name := sgx_tservice
 endif
 
 crypto_library_name := sgx_tcrypto
