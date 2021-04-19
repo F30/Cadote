@@ -9,4 +9,4 @@ build = "../../support/build.rs"
 enclavization_bin = []
 
 [dependencies]
-cadote_runtime = { path = "../../support/cadote_runtime" }
+cadote_untrusted_runtime = { path = "../../support/cadote_untrusted_runtime" }

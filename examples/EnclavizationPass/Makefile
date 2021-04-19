@@ -81,7 +81,7 @@ CUSTOM_COMMON_PATH := $(TEACLAVE_SDK)/common
 #### Support File Paths ####
 SUPPORT_DIR ?= ../../support
 
-CADOTE_RUNTIME_DIR := $(SUPPORT_DIR)/cadote_runtime
+CADOTE_UNTRUSTED_RUNTIME_DIR := $(SUPPORT_DIR)/cadote_untrusted_runtime
 ENCLAVE_CONFIG_FILE := $(SUPPORT_DIR)/enclave-config.xml
 LINKER_SCRIPT_FILE := $(SUPPORT_DIR)/enclave.lds
 
@@ -139,7 +139,7 @@ $(app_build_dir)/enclave_u.o: $(enclave_stub_files)
 $(app_stub_lib_file): $(app_build_dir)/enclave_u.o
 	$(AR) rcsD $@ $^
 
-$(app_bin_file): $(app_stub_lib_file) $(shell find src/ -type f -name '*.rs') Cargo.bin.toml $(shell find $(CADOTE_RUNTIME_DIR)/src -type f -name '*.rs')
+$(app_bin_file): $(app_stub_lib_file) $(shell find src/ -type f -name '*.rs') Cargo.bin.toml $(shell find $(CADOTE_UNTRUSTED_RUNTIME_DIR)/src -type f -name '*.rs')
 	ln -s -f Cargo.bin.toml Cargo.toml
 	@SGX_SDK=$(SGX_SDK) CARGO_TARGET_DIR=build/cargo_bin_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --features=enclavization_bin -- -C passes=enclavization-bin-pass -C codegen-units=1
 	#SGX_SDK=$(SGX_SDK) CARGO_TARGET_DIR=build/cargo_bin_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --features=enclavization_bin -- -C passes=enclavization-bin-pass -C llvm-args=-debug -C codegen-units=1 2>build/output

@@ -1,5 +1,5 @@
 [package]
-name = "cadote_runtime"
+name = "cadote_untrusted_runtime"
 version = "0.0.1"
 authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
 edition = "2018"

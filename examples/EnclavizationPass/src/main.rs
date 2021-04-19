@@ -12,7 +12,7 @@ extern crate std;
 use std::prelude::v1::*;
 
 #[cfg(feature = "enclavization_bin")]
-extern crate cadote_runtime;
+extern crate cadote_untrusted_runtime;
 
 
 #[derive(Debug)]
