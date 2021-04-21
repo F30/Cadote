@@ -1,0 +1,75 @@
+From cb6dd29b839d581b4f3cb7efba1202aab3dd73c2 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 20 Apr 2021 11:38:34 +0000
+Subject: [PATCH 10/11] Enclavization Pass: Declare all pointers as
+ `user_check` in EDL file
+
+Letting the Intel bridges handle just one layer of pointers (but no deep
+references) was half-baked and created additional complexity.
+---
+ .../Transforms/Utils/Enclavization/Export.cpp | 43 ++-----------------
+ 1 file changed, 4 insertions(+), 39 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index a323a9542117..0bd7d10ae3bd 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -104,22 +104,12 @@ void EdlFile::addTrustedFunction(Function *postgateFunc) {
+     auto argType = arg->getType();
+ 
+     if (argType->isPointerTy()) {
+-      auto edlAttrs = getEdlAttributes(arg);
+-      if (!edlAttrs.empty()) {
+-        entryStream << "[";
+-
+-        for (auto attr = edlAttrs.begin(); attr != edlAttrs.end(); ++attr) {
+-          if (attr != edlAttrs.begin()) {
+-            entryStream << ", ";
+-          }
+-          entryStream << *attr;
+-        }
+-
+-        entryStream << "] ";
+-      }
++      // Always `user_check` all pointers, because letting the Intel bridges handle just one layer of
++      // pointers (but no deep references) would be half-baked and creates additional complexity
++      entryStream << "[user_check] ";
+     }
+ 
+-    auto edlType = getEdlType(arg->getType(), postgateFunc->getContext());
++    auto edlType = getEdlType(argType, postgateFunc->getContext());
+     entryStream << edlType << " arg" << i;
+   }
+ 
+@@ -168,28 +158,3 @@ std::string EdlFile::getEdlType(Type *llvmType, LLVMContext &context) {
+ 
+   return edlType;
+ }
+-
+-std::vector<std::string> EdlFile::getEdlAttributes(Argument *arg) {
+-    std::vector<std::string> attrs;
+-
+-    if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
+-      if (arg->hasAttribute(Attribute::AttrKind::StructRet)) {
+-        attrs.push_back("out");
+-      }
+-      if (arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
+-        // LLVM's semantics only guarantee that "the function does not write through this pointer argument,
+-        // even though it may write to the memory that the pointer points to"
+-        // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
+-        attrs.push_back("in");
+-      }
+-
+-      uint64_t numBytes = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+-      std::stringstream attrStream;
+-      attrStream << "size=" << numBytes;
+-      attrs.push_back(attrStream.str());
+-    } else {
+-      attrs.push_back("user_check");
+-    }
+-
+-    return attrs;
+-}
+-- 
+2.25.1
+

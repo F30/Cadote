@@ -1,7 +1,7 @@
 From 2b1f0a065de3e6b64dfd47c379fe6c28dfb045fe Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Fri, 16 Apr 2021 09:42:12 +0000
-Subject: [PATCH 8/9] Enclavization Pass: Make first version of automatic
+Subject: [PATCH 08/11] Enclavization Pass: Make first version of automatic
  enclavization work
 
 * Differentiate between real and proxy generated postgate declarations

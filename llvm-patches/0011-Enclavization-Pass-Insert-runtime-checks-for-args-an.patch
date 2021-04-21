@@ -1,0 +1,239 @@
+From 3fba78a2e2293501d552de579df05f16ce9d8c4a Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 20 Apr 2021 15:47:49 +0000
+Subject: [PATCH 11/11] Enclavization Pass: Insert runtime checks for args and
+ return values
+
+---
+ .../Utils/Enclavization/RuntimeLib.h          |   8 ++
+ .../Utils/Enclavization/RuntimeLib.cpp        |  28 +++++
+ .../Utils/Enclavization/Wrappers.cpp          | 116 +++++++++++++++++-
+ 3 files changed, 149 insertions(+), 3 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h b/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
+index e2c898353265..517cee1135e5 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
+@@ -8,7 +8,11 @@
+ #define INIT_ENCLAVE_FUNC "cadote_init_enclave"
+ #define ENCLAVE_ID_FUNC "cadote_get_enclave_id"
+ #define ERROR_HANDLER_FUNC "cadote_enclave_error_handler"
++#define CHECK_ARG_PTR_FUNC "cadote_check_arg_ptr"
++#define CHECK_RETURN_PTR_FUNC "cadote_check_return_ptr"
+ 
++// LLVM type for `usize`
++#define USIZE_TYPE Type::getInt64Ty
+ // LLVM type for `sgx_enclave_id_t`
+ #define SGX_ENCLAVE_ID_TYPE Type::getInt64Ty
+ 
+@@ -19,5 +23,9 @@ llvm::Function *getEnclaveIdDecl(llvm::Module *);
+ 
+ llvm::Function *getErrorHandlerDecl(llvm::Module *);
+ 
++llvm::Function *getCheckArgPtrDecl(llvm::Module *);
++
++llvm::Function *getCheckReturnPtrDecl(llvm::Module *);
++
+ 
+ #endif
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp b/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
+index ee3c0c8f7b99..758ac4a53fd5 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
+@@ -46,3 +46,31 @@ Function *getErrorHandlerDecl(Module *mod) {
+ 
+   return handlerFunc;
+ }
++
++
++Function *getCheckArgPtrDecl(Module *mod) {
++  Function *checkFunc = mod->getFunction(CHECK_ARG_PTR_FUNC);
++  if (checkFunc) {
++    return checkFunc;
++  }
++
++  Type *checkArgs[] = { Type::getInt8Ty(mod->getContext())->getPointerTo(), USIZE_TYPE(mod->getContext()) };
++  FunctionType *checkType = FunctionType::get(Type::getVoidTy(mod->getContext()), checkArgs, false);
++  checkFunc = Function::Create(checkType, Function::ExternalLinkage, CHECK_ARG_PTR_FUNC, mod);
++
++  return checkFunc;
++}
++
++
++Function *getCheckReturnPtrDecl(Module *mod) {
++  Function *checkFunc = mod->getFunction(CHECK_RETURN_PTR_FUNC);
++  if (checkFunc) {
++    return checkFunc;
++  }
++
++  Type *checkArgs[] = { Type::getInt8Ty(mod->getContext())->getPointerTo(), USIZE_TYPE(mod->getContext()) };
++  FunctionType *checkType = FunctionType::get(Type::getVoidTy(mod->getContext()), checkArgs, false);
++  checkFunc = Function::Create(checkType, Function::ExternalLinkage, CHECK_RETURN_PTR_FUNC, mod);
++
++  return checkFunc;
++}
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index afe90216b2c3..008e353e7d88 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -111,8 +111,8 @@ Function *getPregateImpl(CallBase *callToWrap) {
+ 
+   AllocaInst *postgateReturnAlloc = nullptr;
+   if (wrappedFunc->getReturnType() != Type::getVoidTy(mod->getContext())) {
+-      // Proxy functions write the return value to a passed pointer
+-      postgateReturnAlloc = new AllocaInst(wrappedFunc->getReturnType(), 0, "", callPostgateBlock);
++    // Proxy functions write the return value to a passed pointer
++    postgateReturnAlloc = new AllocaInst(wrappedFunc->getReturnType(), 0, "", callPostgateBlock);
+   }
+ 
+   Function *enclaveIdDecl = getEnclaveIdDecl(mod);
+@@ -286,6 +286,83 @@ Function *getPostgateProxyDecl(CallBase *callToWrap) {
+ }
+ 
+ 
++static void sizedRecursivePointerCheck(Value *, size_t, Function *, BasicBlock *);
++
++static void unsizedRecursivePointerCheck(Value *value, Function *checkFunc, BasicBlock *bblock) {
++  // Just check the pointed-to address itself (size 1) because we don't know the allocated size
++  sizedRecursivePointerCheck(value, 1, checkFunc, bblock);
++}
++
++static void sizedRecursivePointerCheck(Value *value, size_t size, Function *checkFunc, BasicBlock *bblock) {
++  Module *mod = bblock->getParent()->getParent();
++
++  if (value->getType()->isPointerTy()) {
++    Value *int8Ptr = new BitCastInst(
++      value,
++      Type::getInt8Ty(mod->getContext())->getPointerTo(),
++      "",
++      bblock
++    );
++    Value *checkPtrArgs[] = {
++      int8Ptr,
++      ConstantInt::get(USIZE_TYPE(mod->getContext()), size)
++    };
++    CallInst::Create(
++      checkFunc,
++      checkPtrArgs,
++      "",
++      bblock
++    );
++
++    Type *pointedToType = value->getType()->getPointerElementType();
++    if (pointedToType->isPointerTy() || pointedToType->isArrayTy() || pointedToType->isStructTy()) {
++      Value *pointedToVal = new LoadInst(
++        pointedToType,
++        value,
++        "",
++        bblock
++      );
++      unsizedRecursivePointerCheck(pointedToVal, checkFunc, bblock);
++    }
++  }
++
++  else if (value->getType()->isArrayTy()) {
++    ArrayType *arrType = dyn_cast<ArrayType>(value->getType());
++    if (arrType->getNumElements() < 1) {
++      return;
++    }
++    Type *elemType = arrType->getElementType();
++    if (elemType->isPointerTy() || elemType->isArrayTy() || elemType->isStructTy()) {
++      unsigned int indexes[] = { 0 };
++      Value *firstElem = ExtractValueInst::Create(
++        value,
++        indexes,
++        "",
++        bblock
++      );
++      unsizedRecursivePointerCheck(firstElem, checkFunc, bblock);
++    }
++  }
++
++  else if (value->getType()->isStructTy()) {
++    StructType *strType = dyn_cast<StructType>(value->getType());
++    for (unsigned int i = 0; i < strType->getNumElements(); ++i) {
++      Type *elemType = strType->getElementType(i);
++      if (elemType->isPointerTy() || elemType->isArrayTy() || elemType->isStructTy()) {
++        unsigned int indexes[] = { i };
++        Value *elem = ExtractValueInst::Create(
++          value,
++          indexes,
++          "",
++          bblock
++        );
++        unsizedRecursivePointerCheck(elem, checkFunc, bblock);
++      }
++    }
++  }
++}
++
++
+ Function *getPostgateImpl(CallBase *callToWrap, EdlFile &edlFile) {
+   Function *wrappedFunc = callToWrap->getCalledFunction();
+   Module *mod = wrappedFunc->getParent();
+@@ -301,7 +378,7 @@ Function *getPostgateImpl(CallBase *callToWrap, EdlFile &edlFile) {
+ 
+   BasicBlock *postgateBlock = BasicBlock::Create(
+     mod->getContext(),
+-    "call_enclaved",
++    "postgate",
+     postgateFunc,
+     nullptr
+   );
+@@ -309,7 +386,17 @@ Function *getPostgateImpl(CallBase *callToWrap, EdlFile &edlFile) {
+   std::vector<Value *> wrappedArgs;
+   for (auto arg = postgateFunc->arg_begin(); arg != postgateFunc->arg_end(); ++arg) {
+     wrappedArgs.push_back(arg);
++
++    // Passing pointers to the enclave's own memory could be an exploit
++    Function *checkArgFunc = getCheckArgPtrDecl(mod);
++    if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
++      uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
++      sizedRecursivePointerCheck(arg, derefSize, checkArgFunc, postgateBlock);
++    } else {
++      unsizedRecursivePointerCheck(arg, checkArgFunc, postgateBlock);
++    }
+   }
++  // Call original function
+   CallInst *wrappedCall = CallInst::Create(
+     wrappedFunc,
+     wrappedArgs,
+@@ -317,12 +404,35 @@ Function *getPostgateImpl(CallBase *callToWrap, EdlFile &edlFile) {
+     postgateBlock
+   );
+ 
++  for (size_t i = 0; i < wrappedFunc->arg_size(); ++i) {
++    // Ensure that no pointers to the enclave's memory space ended up in memory passed via argumen (`sret`-
++    // style results or mutable references)
++    Argument *arg = wrappedFunc->getArg(i);
++    // LLVM's semantics for `readonly` only guarantee that "the function does not write through this pointer
++    // argument, even though it may write to the memory that the pointer points to"
++    // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
++    if (!arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
++      Function *checkReturnFunc = getCheckReturnPtrDecl(mod);
++      if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
++        uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
++        sizedRecursivePointerCheck(wrappedArgs[i], derefSize, checkReturnFunc, postgateBlock);
++      } else {
++        unsizedRecursivePointerCheck(wrappedArgs[i], checkReturnFunc, postgateBlock);
++      }
++    }
++  }
++
+   if (wrappedFunc->getReturnType() == Type::getVoidTy(mod->getContext())) {
+     ReturnInst::Create(
+       mod->getContext(),
+       postgateBlock
+     );
+   } else {
++    // Ensure that no pointers to the enclave's memory space are returned
++    Function *checkReturnFunc = getCheckReturnPtrDecl(mod);
++    unsizedRecursivePointerCheck(wrappedCall, checkReturnFunc, postgateBlock);
++
++    // Pass result from original function
+     ReturnInst::Create(
+       mod->getContext(),
+       wrappedCall,
+-- 
+2.25.1
+

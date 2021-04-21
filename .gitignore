@@ -19,3 +19,6 @@ Cargo.lock
 /rust-enclave/**/*_u.c
 /rust-enclave/**/*_u.h
 /rust-enclave/**/*_u.o
+
+/support/cadote_untrusted_runtime/target
+/support/cadote_trusted_runtime/target

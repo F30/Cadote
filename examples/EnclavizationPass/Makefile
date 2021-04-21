@@ -82,6 +82,7 @@ CUSTOM_COMMON_PATH := $(TEACLAVE_SDK)/common
 SUPPORT_DIR ?= ../../support
 
 CADOTE_UNTRUSTED_RUNTIME_DIR := $(SUPPORT_DIR)/cadote_untrusted_runtime
+CADOTE_TRUSTED_RUNTIME_DIR := $(SUPPORT_DIR)/cadote_trusted_runtime
 ENCLAVE_CONFIG_FILE := $(SUPPORT_DIR)/enclave-config.xml
 LINKER_SCRIPT_FILE := $(SUPPORT_DIR)/enclave.lds
 
@@ -103,7 +104,7 @@ $(enclave_stub_files): $(enclave_edl_file)
 
 
 #### Enclave Build ####
-$(enclave_lib_file) $(enclave_edl_file): $(shell find src/ -type f -name '*.rs') Cargo.lib.toml
+$(enclave_lib_file) $(enclave_edl_file): $(shell find src/ -type f -name '*.rs') Cargo.lib.toml $(shell find $(CADOTE_TRUSTED_RUNTIME_DIR)/src -type f -name '*.rs')
 	ln -s -f Cargo.lib.toml Cargo.toml
 	@CARGO_TARGET_DIR=build/cargo_lib_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --lib --features=enclavization_lib -- -C passes=enclavization-lib-pass -A dead_code -C link-dead-code -C codegen-units=1
 	#CARGO_TARGET_DIR=build/cargo_lib_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --lib --features=enclavization_lib -- -C passes=enclavization-lib-pass -A dead_code -C link-dead-code -C llvm-args=-debug -C codegen-units=1 2>build/output
