@@ -1,0 +1,93 @@
+From d833e0081c795f298e5abb9781cc246c2d25137d Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Fri, 23 Apr 2021 09:32:02 +0000
+Subject: [PATCH 12/14] Enclavization Pass: Add support for LLVM integers wider
+ than the ones regularly supported
+
+---
+ .../Transforms/Utils/Enclavization/Export.h   |  5 +++-
+ .../Transforms/Utils/Enclavization/Export.cpp | 26 +++++++++++++++++++
+ 2 files changed, 30 insertions(+), 1 deletion(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+index 0cd7a3874277..102292b4447d 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+@@ -3,6 +3,7 @@
+ 
+ #include <fstream>
+ #include <string>
++#include <unordered_set>
+ #include <vector>
+ 
+ #include "llvm/IR/Argument.h"
+@@ -17,8 +18,9 @@ class EdlFile {
+   public:
+     EdlFile(std::string &path);
+     ~EdlFile();
+-    void addTrustedFunction(llvm::Function *);
+     std::string addStruct(llvm::StructType *);
++    std::string addWideInt(unsigned int);
++    void addTrustedFunction(llvm::Function *);
+ 
+   private:
+     void writeFile();
+@@ -27,6 +29,7 @@ class EdlFile {
+ 
+     std::string filePath;
+     std::vector<std::string> structs;
++    std::unordered_set<unsigned int> wideInts;
+     std::vector<std::string> trustedFuncs;
+ };
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index 0bd7d10ae3bd..a3c98c4d3ce8 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -1,3 +1,4 @@
++#include <assert.h>
+ #include <fstream>
+ #include <ios>
+ #include <sstream>
+@@ -80,6 +81,29 @@ std::string EdlFile::addStruct(StructType *structTy) {
+   return structName;
+ }
+ 
++std::string EdlFile::addWideInt(unsigned int width) {
++  assert(width % 64 == 0 && "Wide ints are only supported with width divisible by 64");
++  std::string structName = "struct i" + std::to_string(width);
++
++  if (wideInts.count(width) != 0) {
++    // Struct has already been inserted (in a previous call)
++    return structName;
++  }
++
++  std::string structEntry;
++  raw_string_ostream entryStream(structEntry);
++  entryStream << structName << "{\n";
++  for (unsigned int i = 0; i < width / 64; ++i) {
++    entryStream << "int64_t elem" << i << ";\n";
++  }
++  entryStream << "};\n";
++
++  structs.push_back(structEntry);
++  wideInts.insert(width);
++
++  return structName;
++}
++
+ void EdlFile::addTrustedFunction(Function *postgateFunc) {
+   std::string funcEntry;
+   raw_string_ostream entryStream(funcEntry);
+@@ -150,6 +174,8 @@ std::string EdlFile::getEdlType(Type *llvmType, LLVMContext &context) {
+     typeStream << "float";
+   } else if (llvmType == Type::getDoubleTy(context)) {
+     typeStream << "double";
++  } else if (llvmType->isIntegerTy()) {
++    typeStream << addWideInt(llvmType->getIntegerBitWidth());
+   } else {
+     typeStream << "UNKNOWN<";
+     llvmType->print(typeStream);
+-- 
+2.25.1
+

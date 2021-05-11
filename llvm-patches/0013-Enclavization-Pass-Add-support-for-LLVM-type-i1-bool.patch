@@ -1,0 +1,27 @@
+From e6edd2e4a3a27e389a810c59b38e8eff161d61ad Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 11 May 2021 08:53:42 +0000
+Subject: [PATCH 13/14] Enclavization Pass: Add support for LLVM type i1/bool
+ to EDL files
+
+---
+ llvm/lib/Transforms/Utils/Enclavization/Export.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index a3c98c4d3ce8..e7bda11c914f 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -162,6 +162,9 @@ std::string EdlFile::getEdlType(Type *llvmType, LLVMContext &context) {
+ 
+   else if (llvmType == Type::getVoidTy(context)) {
+     typeStream << "void";
++  } else if (llvmType == Type::getInt1Ty(context)) {
++    // TODO: This is not really correct, but we don't have any smaller type
++    typeStream << "int8_t";
+   } else if (llvmType == Type::getInt8Ty(context)) {
+     typeStream << "int8_t";
+   } else if (llvmType == Type::getInt16Ty(context)) {
+-- 
+2.25.1
+

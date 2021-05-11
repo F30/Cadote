@@ -54,6 +54,22 @@ fn pass_slice_enclaved_(param: &str) -> &str {
   &param[6..]
 }
 
+fn get_long_int_enclaved_() -> i128 {
+  i128::MAX - 2000
+}
+
+fn get_result_enclaved_(i: i64) -> Result<(), &'static str> {
+  if i >= 0 {
+    Ok(())
+  } else {
+    Err("Error message")
+  }
+}
+
+fn take_string_enclaved_(s: String) {
+  println!("Got string: {}", s);
+}
+
 #[allow(dead_code)]
 fn get_box_enclaved_() -> Box<i64> {
   Box::new(5)
@@ -109,6 +125,11 @@ fn main() {
   println!("Struct: {:?}", e);
   let f = pass_slice_enclaved_("Hello world");
   println!("Passed slice: {:?}", f);
+  let g = get_long_int_enclaved_();
+  println!("Long int: {}", g);
+  get_result_enclaved_(1).expect("Did not get OK result");
+  println!("Got OK result");
+  take_string_enclaved_(String::from("String into enclave"));
 
   // Uncomment to trigger check cases
   //let z = get_box_enclaved_();
