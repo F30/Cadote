@@ -13,4 +13,5 @@ fn main () {
     "HW" => println!("cargo:rustc-link-lib=dylib=sgx_urts"),
     _    => println!("cargo:rustc-link-lib=dylib=sgx_urts"), // Treat undefined as HW
   }
+  println!("cargo:rustc-link-lib=dylib=sgx_uprotected_fs");
 }

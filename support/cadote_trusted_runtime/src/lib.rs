@@ -3,7 +3,12 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
+use std::prelude::v1::*;
+use std::io::BufRead;
+use std::ptr;
+
 use sgx_trts::trts;
+use sgx_tstd::sgxfs;
 
 
 #[no_mangle]
@@ -20,4 +25,45 @@ pub fn cadote_check_return_ptr(ptr: *const u8, size: usize) {
   if trts::rsgx_raw_is_within_enclave(ptr, size) {
     panic!("Passing an allocation from within the enclave to the outside world");
   }
+}
+
+/*
+ * Non-generic version of sgx_tstd::sgxfs::OpenOptions::open() to avoid monomorphization hassle.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_openoptions_open(openopts: &sgxfs::OpenOptions, path: &str) -> std::io::Result<sgxfs::SgxFile> {
+  openopts.open(path)
+}
+
+/*
+ * Non-generic version of sgx_tstd::io::BufReader::new() to avoid monomorphization hassle.
+ */
+#[no_mangle]
+pub fn cadote_io_bufreader_new(file: sgxfs::SgxFile) -> sgx_tstd::io::BufReader<sgxfs::SgxFile> {
+  sgx_tstd::io::BufReader::new(file)
+}
+
+/*
+ * Non-generic version of sgx_tstd::io::BufReader::read_line(() to avoid monomorphization hassle.
+ */
+#[no_mangle]
+pub fn cadote_io_bufreader_readline(reader: &mut sgx_tstd::io::BufReader<sgxfs::SgxFile>,
+                                    buf: &mut String) -> std::io::Result<usize> {
+  reader.read_line(buf)
+}
+
+/*
+ * Manual call to drop_in_place for sgx_tstd::sgxfs::SgxFile, wrapped to avoid monomorphization hassle.
+ */
+#[no_mangle]
+pub unsafe fn cadote_drop_sgxfs_sgxfile(file: &mut sgxfs::SgxFile) {
+  ptr::drop_in_place(file);
+}
+
+/*
+ * Manual call to drop_in_place for sgx_tstd::io::BufReader, wrapped to avoid monomorphization hassle.
+ */
+#[no_mangle]
+pub unsafe fn cadote_drop_io_bufreader(reader: &mut sgx_tstd::io::BufReader<sgxfs::SgxFile>) {
+  ptr::drop_in_place(reader);
 }

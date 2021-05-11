@@ -3,6 +3,10 @@ name = "password_check"
 version = "0.0.1"
 authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
 edition = "2018"
+build = "../../support/build.rs"
+
+[features]
+enclavization_bin = []
 
 [dependencies]
 cadote_untrusted_runtime = { path = "../../support/cadote_untrusted_runtime" }

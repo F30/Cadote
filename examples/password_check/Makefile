@@ -16,7 +16,7 @@ app_bin_file = build/$(project_name)
 
 
 #### Rust Settings ####
-project_name := wrapsteel
+project_name := password_check
 build_mode := debug
 #build_mode := release
 
@@ -26,6 +26,7 @@ endif
 
 # Toolchain based on the one used by Teaclave Rust-SGX SDK 1.1.3
 RUSTUP_TOOLCHAIN := custom-llvm-nightly-2020-10-25
+# ADJUST: Overwrite this to the path of your local (patched) LLVM build
 CARGO := LD_LIBRARY_PATH=/usr/local/lib/llvm-11-rs-debug/lib cargo +$(RUSTUP_TOOLCHAIN)
 #CARGO := LD_LIBRARY_PATH=/usr/local/lib/llvm-11-rs-debug/lib valgrind --tool=none --trace-children=yes cargo +$(RUSTUP_TOOLCHAIN)
 
@@ -110,7 +111,7 @@ $(enclave_stub_files): $(enclave_edl_file)
 $(enclave_lib_file) $(enclave_edl_file): $(shell find src/ -type f -name '*.rs') Cargo.lib.toml $(shell find $(CADOTE_TRUSTED_RUNTIME_DIR)/src -type f -name '*.rs')
 	ln -s -f Cargo.lib.toml Cargo.toml
 	@CARGO_TARGET_DIR=build/cargo_lib_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --lib --features=enclavization_lib -- -C passes=enclavization-lib-pass -A dead_code -C link-dead-code -C codegen-units=1
-	#CARGO_TARGET_DIR=build/cargo_lib_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --lib --features=enclavization_lib -- -C passes=enclavization-lib-pass -A dead_code -C link-dead-code -C llvm-args=-debug -C codegen-units=1 2>build/output
+	#CARGO_TARGET_DIR=build/cargo_lib_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --lib --features=enclavization_lib -- -C passes=enclavization-lib-pass -A dead_code -C link-dead-code -C codegen-units=1 2>build/output
 	rm Cargo.toml
 	@echo "Cargo  =>  $(enclave_lib_file)"
 	mkdir -p $(enclave_build_dir)
@@ -124,6 +125,15 @@ $(enclave_build_dir)/enclave_t.o: $(enclave_stub_files)
 	@echo "CC  <=  $<"
 
 $(enclave_bin_file): $(enclave_build_dir)/enclave_t.o $(enclave_lib_file) $(LINKER_SCRIPT_FILE)
+	# Remove superflous (non-SGX) standard library objects from the static library, which might have been
+	# pulled in through external crates
+	# They would cause linker erros for duplicate special symbols such as `__rdl_alloc` and undefined libc
+	# symbols such as `pthread_mutex_lock`.
+	mkdir -p $(enclave_build_dir)/libenclave
+	ar x $(enclave_lib_file) --output $(enclave_build_dir)/libenclave
+	rm -f $(enclave_build_dir)/libenclave/std-de*.o
+	rm $(enclave_lib_file)
+	ar rcs $(enclave_lib_file) $(enclave_build_dir)/libenclave/*.o
 	@$(CXX) $(enclave_build_dir)/enclave_t.o -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 		-Wl,--whole-archive -l$(trts_library_name) -Wl,--no-whole-archive \
 		-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(service_library_name) -l$(crypto_library_name) -l$(protectedFs_library_name) -L $(enclave_build_dir) -lenclave -Wl,--end-group \
@@ -146,7 +156,7 @@ $(app_stub_lib_file): $(app_build_dir)/enclave_u.o
 $(app_bin_file): $(app_stub_lib_file) $(shell find src/ -type f -name '*.rs') Cargo.bin.toml $(shell find $(CADOTE_UNTRUSTED_RUNTIME_DIR)/src -type f -name '*.rs')
 	ln -s -f Cargo.bin.toml Cargo.toml
 	@SGX_SDK=$(SGX_SDK) CARGO_TARGET_DIR=build/cargo_bin_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --features=enclavization_bin -- -C passes=enclavization-bin-pass -C codegen-units=1
-	#SGX_SDK=$(SGX_SDK) CARGO_TARGET_DIR=build/cargo_bin_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --features=enclavization_bin -- -C passes=enclavization-bin-pass -C llvm-args=-debug -C codegen-units=1 2>build/output
+	#SGX_SDK=$(SGX_SDK) CARGO_TARGET_DIR=build/cargo_bin_target $(CARGO) rustc $(CARGO_BUILD_FLAGS) --features=enclavization_bin -- -C passes=enclavization-bin-pass -C codegen-units=1 2>build/output
 	rm Cargo.toml
 	@echo "Cargo  =>  $@"
 	cp -f build/cargo_bin_target/$(build_mode)/$(project_name) $@

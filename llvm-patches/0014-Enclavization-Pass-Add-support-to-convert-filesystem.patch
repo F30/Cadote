@@ -1,0 +1,1017 @@
+From 089f931650360ba4f232eb83beb5b302427f2314 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 11 May 2021 08:56:27 +0000
+Subject: [PATCH 14/14] Enclavization Pass: Add support to convert filesystem
+ operations to sgxfs
+
+---
+ .../Utils/Enclavization/EnclaveModify.h       |  37 +
+ .../Transforms/Utils/Enclavization/Support.h  |   6 +-
+ llvm/lib/Transforms/Utils/CMakeLists.txt      |   1 +
+ .../Utils/Enclavization/EnclaveModify.cpp     | 864 ++++++++++++++++++
+ .../Transforms/Utils/Enclavization/Export.cpp |   1 +
+ .../Transforms/Utils/EnclavizationLibPass.cpp |  15 +-
+ 6 files changed, 917 insertions(+), 7 deletions(-)
+ create mode 100644 llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+ create mode 100644 llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+new file mode 100644
+index 000000000000..7e18357ff07b
+--- /dev/null
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+@@ -0,0 +1,37 @@
++#ifndef LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_ENCLAVED_MODIFY_H
++#define LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_ENCLAVED_MODIFY_H
++
++#include <unordered_map>
++#include <vector>
++
++#include "llvm/IR/Function.h"
++#include "llvm/IR/InstrTypes.h"
++#include "llvm/IR/Value.h"
++
++
++void insertSgxUsage(llvm::Function *);
++
++class FsCallConverter {
++  public:
++    void convertOpenoptionsNew(llvm::CallBase *);
++    void convertOpenoptionsCreate(llvm::CallBase *);
++    void convertOpenoptionsRead(llvm::CallBase *);
++    void convertOpenoptionsAppend(llvm::CallBase *);
++    void convertOpenoptionsOpen(llvm::CallBase *);
++    void convertBufreaderNew(llvm::CallBase *);
++    void convertBufreaderReadline(llvm::CallBase *);
++    void converFileWriteall(llvm::CallBase *);
++    void convertFileDrops();
++    void convertBufreaderDrops();
++    void eraseConvertedInstrs();
++
++  private:
++    // Mappings from original sgx_tstd::untrusted::fs type instances to their sgx_tstd::sgxfs counterparts
++    std::unordered_map<llvm::Value *, llvm::Value *> openoptionsConversions;
++    std::unordered_map<llvm::Value *, llvm::Value *> fileConversions;
++    std::unordered_map<llvm::Value *, llvm::Value *> bufreaderConversions;
++    std::vector<llvm::Instruction *> convertedInstrs;
++};
++
++
++#endif
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
+index f46c863b62c2..48a0845ef556 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
+@@ -22,10 +22,14 @@ inline bool isMangledRustName(llvm::StringRef name) {
+   return name.startswith("_ZN") || name.startswith("_R");
+ }
+ 
++inline bool strStartswith(const std::string &str, const std::string &prefix) {
++  return str.rfind(prefix, 0) == 0;
++}
++
+ /*
+  * C++14 string "ends with" function from https://stackoverflow.com/a/42844629.
+  */
+-inline bool strEndsWith(const std::string& str, const std::string& suffix) {
++inline bool strEndsWith(const std::string &str, const std::string &suffix) {
+   return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
+ }
+ 
+diff --git a/llvm/lib/Transforms/Utils/CMakeLists.txt b/llvm/lib/Transforms/Utils/CMakeLists.txt
+index 03a6740b0c44..b7afbbfe802f 100644
+--- a/llvm/lib/Transforms/Utils/CMakeLists.txt
++++ b/llvm/lib/Transforms/Utils/CMakeLists.txt
+@@ -20,6 +20,7 @@ add_llvm_component_library(LLVMTransformUtils
+   DemoteRegToStack.cpp
+   EnclavizationBinPass.cpp
+   EnclavizationLibPass.cpp
++  Enclavization/EnclaveModify.cpp
+   Enclavization/Export.cpp
+   Enclavization/RuntimeLib.cpp
+   Enclavization/Support.cpp
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+new file mode 100644
+index 000000000000..330b43158ec4
+--- /dev/null
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -0,0 +1,864 @@
++#include <unordered_set>
++#include <vector>
++
++#include "llvm/IR/BasicBlock.h"
++#include "llvm/IR/Constants.h"
++#include "llvm/IR/DerivedTypes.h"
++#include "llvm/IR/Function.h"
++#include "llvm/IR/InstrTypes.h"
++#include "llvm/IR/Instructions.h"
++#include "llvm/IR/Value.h"
++#include "llvm/Support/Alignment.h"
++#include "llvm/Support/Casting.h"
++#include "llvm/Support/Debug.h"
++
++#include "llvm/Transforms/Utils/Enclavization/EnclaveModify.h"
++#include "llvm/Transforms/Utils/Enclavization/Support.h"
++
++
++using namespace llvm;
++
++#define DEBUG_TYPE "enclavization-lib-pass"
++
++
++/*
++ * Resembles the declaration from sgx_tsdt::sgxfs.
++ */
++static StructType *getSgxfsOpenoptionsType(Module *mod) {
++  StructType *outer = mod->getTypeByName("sgxfsOpenoptionsType");
++  if (outer) {
++    // Struct has already been declared (in previous calls)
++    return outer;
++  }
++
++  ArrayType *emptyPadding = ArrayType::get(Type::getInt8Ty(mod->getContext()), 0);
++
++  std::vector<Type *> innerElems;
++  for (unsigned int i = 0; i < 5; ++i) {
++    innerElems.push_back(emptyPadding);
++    innerElems.push_back(Type::getInt8Ty(mod->getContext()));
++  }
++  innerElems.push_back(emptyPadding);
++  StructType *inner = StructType::create(innerElems);
++
++  Type *outerElems[] = { emptyPadding, inner, emptyPadding };
++  outer = StructType::create(outerElems, "sgxfsOpenoptionsType");
++
++  return outer;
++}
++
++static StructType *getSgxfsFileResultType(Module *mod) {
++  StructType *type = mod->getTypeByName("sgxfsFileResultType");
++  if (type) {
++    return type;
++  }
++
++  ArrayType *emptyPadding = ArrayType::get(Type::getInt64Ty(mod->getContext()), 0);
++  ArrayType *innerArray = ArrayType::get(Type::getInt64Ty(mod->getContext()), 2);
++  Type *elems[] = { emptyPadding, Type::getInt64Ty(mod->getContext()), innerArray };
++  type = StructType::create(elems, "sgxfsFileResultType");
++
++  return type;
++}
++
++/*
++ * View to sgxfsFileResultType (an enum) used in the success case.
++ */
++static StructType *getSgxfsFileSuccessType(Module *mod) {
++  StructType *type = mod->getTypeByName("sgxfsFileSuccessType");
++  if (type) {
++    return type;
++  }
++
++  ArrayType *innerArray = ArrayType::get(Type::getInt64Ty(mod->getContext()), 1);
++  ArrayType *emptyPadding = ArrayType::get(Type::getInt64Ty(mod->getContext()), 0);
++  Type *elems[] = { innerArray, Type::getInt8Ty(mod->getContext())->getPointerTo(), emptyPadding };
++  type = StructType::create(elems, "sgxfsFileSuccessType");
++
++  return type;
++}
++
++static StructType *getBufreaderSgxfileType(Module *mod) {
++  StructType *outer = mod->getTypeByName("bufreaderSgxfileType");
++  if (outer) {
++    // Struct has already been declared (in previous calls)
++    return outer;
++  }
++
++  ArrayType *emptyPadding = ArrayType::get(Type::getInt64Ty(mod->getContext()), 0);
++
++  ArrayType *innerArray = ArrayType::get(Type::getInt8Ty(mod->getContext()), 0);
++  Type *innerElems[] = { innerArray->getPointerTo(), Type::getInt64Ty(mod->getContext()) };
++  StructType *inner = StructType::create(innerElems);
++
++  Type *outerElems[] = { emptyPadding, Type::getInt8Ty(mod->getContext())->getPointerTo(), emptyPadding,
++                         inner, emptyPadding, Type::getInt64Ty(mod->getContext()), emptyPadding,
++                         Type::getInt64Ty(mod->getContext()), emptyPadding };
++  outer = StructType::create(outerElems, "bufreaderSgxfileType");
++
++  return outer;
++}
++
++
++#define MANGLED_SGXFS_OPENOPTIONS_NEW_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions3new17h2276544802598df9E"
++
++static Function *getSgxfsOpenoptionsNewDecl(Module *mod) {
++  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_NEW_NAME);
++  if (func) {
++    // Function has already been declared (in previous calls)
++    return func;
++  }
++
++  FunctionType *funcType = FunctionType::get(Type::getIntNTy(mod->getContext(), 40), false);
++  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_NEW_NAME, mod);
++
++  return func;
++}
++
++
++#define MANGLED_SGXFS_OPENOPTIONS_READ_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions4read17h01f80b8cd0b64d9eE"
++
++static Function *getSgxfsOpenoptionsReadDecl(Module *mod) {
++  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_READ_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *openOptionsPtrType = getSgxfsOpenoptionsType(mod)->getPointerTo();
++  Type *argTypes[] = { openOptionsPtrType, Type::getInt1Ty(mod->getContext()) };
++  FunctionType *funcType = FunctionType::get(openOptionsPtrType, argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_READ_NAME, mod);
++
++  return func;
++}
++
++
++#define MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions6append17h36f5d14fa67b372bE"
++
++static Function *getSgxfsOpenoptionsAppendDecl(Module *mod) {
++  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *openOptionsPtrType = getSgxfsOpenoptionsType(mod)->getPointerTo();
++  Type *argTypes[] = { openOptionsPtrType, Type::getInt1Ty(mod->getContext()) };
++  FunctionType *funcType = FunctionType::get(openOptionsPtrType, argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME, mod);
++
++  return func;
++}
++
++
++#define CADOTE_OPENOPTIONS_OPEN_NAME "cadote_sgxfs_openoptions_open"
++
++static Function *getCadoteOpenoptionsOpenDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_OPENOPTIONS_OPEN_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = {
++    // Return pointer (`sret`-style)
++    getSgxfsFileResultType(mod)->getPointerTo(),
++    getSgxfsOpenoptionsType(mod)->getPointerTo(),
++    ArrayType::get(Type::getInt8Ty(mod->getContext()), 0)->getPointerTo(),
++    Type::getInt64Ty(mod->getContext())
++  };
++  FunctionType *funcType = FunctionType::get(Type::getVoidTy(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_OPENOPTIONS_OPEN_NAME, mod);
++
++  return func;
++}
++
++
++#define CADOTE_BUFREADER_NEW_NAME "cadote_io_bufreader_new"
++
++static Function *getCadoteBufreaderNewDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_BUFREADER_NEW_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = {
++    // Return pointer (`sret`-style)
++    getBufreaderSgxfileType(mod)->getPointerTo(),
++    Type::getInt8Ty(mod->getContext())->getPointerTo()
++  };
++  FunctionType *funcType = FunctionType::get(Type::getVoidTy(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_BUFREADER_NEW_NAME, mod);
++
++  return func;
++}
++
++
++#define CADOTE_BUFREADER_READLINE_NAME "cadote_io_bufreader_readline"
++
++static Function *getCadoteBufreaderReadlineDecl(Module *mod, Type *resultType, Type *stringType) {
++  Function *func = mod->getFunction(CADOTE_BUFREADER_READLINE_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = {
++    // Return pointer (`sret`-style)
++    resultType->getPointerTo(),
++    getBufreaderSgxfileType(mod)->getPointerTo(),
++    stringType->getPointerTo()
++  };
++  FunctionType *funcType = FunctionType::get(Type::getVoidTy(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_BUFREADER_READLINE_NAME, mod);
++
++  return func;
++}
++
++
++#define MANGLED_IO_WRITE_WRITEALL_NAME "_ZN8sgx_tstd2io5Write9write_all17he0e808b1d50ef8e2E"
++
++static Function *getFileWriteallDecl(Module *mod) {
++  Function *func = mod->getFunction(MANGLED_IO_WRITE_WRITEALL_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = {
++    Type::getInt8Ty(mod->getContext())->getPointerTo()->getPointerTo(),
++    ArrayType::get(Type::getInt8Ty(mod->getContext()), 0)->getPointerTo(),
++    Type::getInt64Ty(mod->getContext())
++  };
++  FunctionType *funcType = FunctionType::get(Type::getInt128Ty(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_IO_WRITE_WRITEALL_NAME, mod);
++
++  return func;
++}
++
++
++#define CADOTE_DROP_SGXFILE_NAME "cadote_drop_sgxfs_sgxfile"
++
++static Function *getCadoteDropSgxfileDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_DROP_SGXFILE_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = { Type::getInt8Ty(mod->getContext())->getPointerTo()->getPointerTo() };
++  FunctionType *funcType = FunctionType::get(Type::getVoidTy(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_DROP_SGXFILE_NAME, mod);
++
++  return func;
++}
++
++
++#define CADOTE_DROP_BUFREADER_NAME "cadote_drop_io_bufreader"
++
++static Function *getCadoteDropBufreaderDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_DROP_BUFREADER_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = { getBufreaderSgxfileType(mod)->getPointerTo() };
++  FunctionType *funcType = FunctionType::get(Type::getVoidTy(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_DROP_BUFREADER_NAME, mod);
++
++  return func;
++}
++
++
++/*
++ * Replaces the following sequence for a call to sgx_tstd::untrusted::fs::OpenOptions::new() with an
++ * equivalent one for a call to sgx_tstd::sgxfs::OpenOptions::new():
++ *
++ *   1. Call of the function
++ *   2. Store the result on the stack as integer
++ *   3. Bitcast the (integer) stack allocation to a generic pointer
++ *   4. Bitcast the actual result struct stack allocation to a generic pointer
++ *   5. Memcpy from (casted) integer stack allocation to (casted) struct stack allocation
++ *
++ * To avoid ABI problems, we replicate the logic next to the original one, instead of overwriting the
++ * original instructions.
++ */
++void FsCallConverter::convertOpenoptionsNew(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  // Create this first, because it needs to be passed an insertion position
++  AllocaInst *openoptionsAlloc = new AllocaInst(
++    getSgxfsOpenoptionsNewDecl(mod)->getReturnType(),
++    0,
++    "",
++    origCall
++  );
++  CallInst *newCall = CallInst::Create(
++    getSgxfsOpenoptionsNewDecl(mod),
++    "",
++    origCall
++  );
++  StoreInst *store = new StoreInst(
++    newCall,
++    openoptionsAlloc,
++    false,
++    // "An alignment of 1 is always safe"
++    *(new Align(1)),
++    static_cast<Instruction *>(nullptr)
++  );
++  store->insertAfter(newCall);
++  BitCastInst *openoptionsCast = new BitCastInst(
++    openoptionsAlloc,
++    getSgxfsOpenoptionsType(mod)->getPointerTo(),
++    "",
++    static_cast<Instruction *>(nullptr)
++  );
++  openoptionsCast->insertAfter(store);
++
++  assert(isa<CallInst>(origCall) && "Call to OpenOptions::new() has unexpected sub-type");
++  convertedInstrs.push_back(origCall);
++
++  assert(origCall->hasOneUse() && "Result of OpenOptions::new() has more uses than expected");
++  for (auto callUser : origCall->users()) {
++    assert(isa<StoreInst>(callUser) && "Result of OpenOptions::new() has unexpected usage");
++    StoreInst *origStore = dyn_cast<StoreInst>(callUser);
++    Value *origTarget = origStore->getPointerOperand();
++
++    assert(origTarget->hasNUses(2) && "Target of store instruction has more uses than expected");
++    for (auto storeUser : origTarget->users()) {
++      if (storeUser == origStore) {
++        continue;
++      }
++      convertedInstrs.push_back(origStore);
++
++      assert(isa<BitCastInst>(storeUser) && "Target of store instruction has unexpected usage");
++      BitCastInst *origSrcCast = dyn_cast<BitCastInst>(storeUser);
++      convertedInstrs.push_back(origSrcCast);
++
++      assert(origSrcCast->hasOneUse() && "Result of bitcast instruction has more uses than expected");
++      for (auto castUser: origSrcCast->users()) {
++        assert(isa<CallInst>(castUser) && "Result of bitcast instruction has unexpected usage");
++        CallInst *memcpyCall = dyn_cast<CallInst>(castUser);
++        assert(memcpyCall->getCalledFunction() &&
++               strStartswith(std::string(memcpyCall->getCalledFunction()->getName()), "llvm.memcpy.") &&
++               "Result of bitcast instruction used in unexpected call");
++
++        Value *memcpyDest = memcpyCall->getArgOperand(0);
++        assert(isa<BitCastInst>(memcpyDest) && "Unexpected origin of memcpy target");
++        BitCastInst *origDestCast = dyn_cast<BitCastInst>(memcpyDest);
++        Value *origDest = origDestCast->getOperand(0);
++
++        convertedInstrs.push_back(memcpyCall);
++        openoptionsConversions[origDest] = openoptionsCast;
++      }
++    }
++  }
++
++  dbgs() << "Enclave modification: Converted call to OpenOptions::new()\n";
++}
++
++void FsCallConverter::convertOpenoptionsCreate(CallBase *origCall) {
++  assert(isa<CallInst>(origCall) && "Call to OpenOptions::read() has unexpected sub-type");
++
++  Value *oldArg0 = origCall->getArgOperand(0);
++  assert(openoptionsConversions.count(oldArg0) == 1 && "Missing converted OpenOptions from previous step");
++  // There is no equivalent method on sgx_tstd::sgxfs::OpenOptions
++  openoptionsConversions[origCall] = openoptionsConversions[oldArg0];
++
++  convertedInstrs.push_back(origCall);
++  dbgs() << "Enclave modification: Converted (obsolete) call to OpenOptions::read()\n";
++}
++
++void FsCallConverter::convertOpenoptionsRead(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  Value *oldArg0 = origCall->getArgOperand(0);
++  assert(openoptionsConversions.count(oldArg0) == 1 && "Missing converted OpenOptions from previous step");
++  Value *newArg0 = openoptionsConversions[oldArg0];
++  Value *newArgs[] = { newArg0, origCall->getArgOperand(1) };
++
++  CallInst *newCall = CallInst::Create(
++    getSgxfsOpenoptionsReadDecl(mod),
++    newArgs,
++    "",
++    origCall
++  );
++
++  assert(isa<CallInst>(origCall) && "Call to OpenOptions::read() has unexpected sub-type");
++  convertedInstrs.push_back(origCall);
++  openoptionsConversions[origCall] = newCall;
++  dbgs() << "Enclave modification: Converted call to OpenOptions::read()\n";
++}
++
++void FsCallConverter::convertOpenoptionsAppend(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  Value *oldArg0 = origCall->getArgOperand(0);
++  assert(openoptionsConversions.count(oldArg0) == 1 && "Missing converted OpenOptions from previous step");
++  Value *newArg0 = openoptionsConversions[oldArg0];
++  Value *newArgs[] = { newArg0, origCall->getArgOperand(1) };
++
++  CallInst *newCall = CallInst::Create(
++    getSgxfsOpenoptionsAppendDecl(mod),
++    newArgs,
++    "",
++    origCall
++  );
++
++  assert(isa<CallInst>(origCall) && "Call to OpenOptions::append() has unexpected sub-type");
++  convertedInstrs.push_back(origCall);
++  openoptionsConversions[origCall] = newCall;
++  dbgs() << "Enclave modification: Converted call to OpenOptions::append()\n";
++}
++
++void FsCallConverter::convertOpenoptionsOpen(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  AllocaInst *resultAlloc = new AllocaInst(
++    getSgxfsFileResultType(mod),
++    0,
++    "",
++    origCall
++  );
++
++  Value *oldArg1 = origCall->getArgOperand(1);
++  assert(openoptionsConversions.count(oldArg1) == 1 && "Missing converted OpenOptions from previous step");
++  Value *newArg1 = openoptionsConversions[oldArg1];
++  Value *newArgs[] = { resultAlloc, newArg1, origCall->getArgOperand(2), origCall->getArgOperand(3) };
++
++  CallInst::Create(
++    getCadoteOpenoptionsOpenDecl(mod),
++    newArgs,
++    "",
++    origCall
++  );
++
++  assert(isa<CallInst>(origCall) && "Call to OpenOptions::open() has unexpected sub-type");
++  convertedInstrs.push_back(origCall);
++
++  BasicBlock *successSuccessor;
++  BasicBlock *errorSuccessor;
++  // Just for sanity checking
++  std::unordered_set<BitCastInst *> successorCasts;
++
++  Value *oldArg0 = origCall->getArgOperand(0);
++  assert(oldArg0->hasNUses(2) && "Result of OpenOptions::open() has more uses than expected");
++  for (auto sretUser : oldArg0->users()) {
++    if (sretUser == origCall) {
++      continue;
++    }
++    assert(isa<CallInst>(sretUser) && "Result of OpenOptions::open() has unexpected usage");
++    CallInst *intoResultCall = dyn_cast<CallInst>(sretUser);
++    assert(intoResultCall->getCalledFunction() &&
++           demangleRustName(intoResultCall->getCalledFunction()->getName()) ==
++           "<core::result::Result<T,E> as core::ops::try::Try>::into_result" &&
++           "Result of OpenOptions::open() has unexpected usage");
++    convertedInstrs.push_back(intoResultCall);
++
++    assert(intoResultCall->getArgOperand(0)->hasNUses(4) && "Result of into_result() has unexpected usage");
++    for (auto intoResultUser : intoResultCall->getArgOperand(0)->users()) {
++      if (intoResultUser == intoResultCall) {
++        continue;
++      }
++      assert(isa<BitCastInst>(intoResultUser));
++      BitCastInst *oldCast = dyn_cast<BitCastInst>(intoResultUser);
++
++      if (oldCast->getDestTy() != Type::getInt32Ty(mod->getContext())->getPointerTo()) {
++        successorCasts.insert(oldCast);
++      } else {
++        BitCastInst *newCast = new BitCastInst(
++          // into_result() is effectively a no-op (for now)
++          resultAlloc,
++          Type::getInt64Ty(mod->getContext())->getPointerTo(),
++          "",
++          oldCast
++        );
++        convertedInstrs.push_back(oldCast);
++
++        assert(oldCast->hasOneUse() && "Result of bitcast instruction has unexpected usage");
++        for (auto oldCastUser : oldCast->users()) {
++          assert(isa<LoadInst>(oldCastUser) && "Result of bitcast instruction has unexpected usage");
++          LoadInst *oldLoad = dyn_cast<LoadInst>(oldCastUser);
++
++          LoadInst *newLoad = new LoadInst(
++            Type::getInt64Ty(mod->getContext()),
++            newCast,
++            "",
++            oldLoad
++          );
++          convertedInstrs.push_back(oldLoad);
++
++          assert(oldLoad->hasOneUse() && "Result of load instruction has unexpected usage");
++          for (auto oldLoadUser : oldLoad->users()) {
++            assert(isa<ZExtInst>(oldLoadUser) && "Result of load instruction has unexpected usage");
++            ZExtInst *oldZExt = dyn_cast<ZExtInst>(oldLoadUser);
++            // We don't need to `zext` when directly loading an Int64
++            convertedInstrs.push_back(oldZExt);
++
++            assert(oldZExt->hasOneUse() && "Result of zext instruction has unexpected usage");
++            for (auto oldZExtUser : oldZExt->users()) {
++              assert(isa<SwitchInst>(oldZExtUser) && "Result of zext instruction has unexpected usage");
++              SwitchInst *switcher = dyn_cast<SwitchInst>(oldZExtUser);
++
++              // For once, modify instead of replicating, because replicating the SwitchInst would be even
++              // more cumbersome
++              switcher->setCondition(newLoad);
++
++              for (auto caseHandle : switcher->cases()) {
++                if (caseHandle.getCaseValue()->equalsInt(0)) {
++                  successSuccessor = caseHandle.getCaseSuccessor();
++                } else if (caseHandle.getCaseValue()->equalsInt(1)) {
++                  errorSuccessor = caseHandle.getCaseSuccessor();
++                } else {
++                  assert(false && "Switch instruction has unexpected case");
++                }
++              }
++            }
++          }
++        }
++      }
++    }
++  }
++  dbgs() << "Enclave modification: Converted actual call to OpenOptions::open()\n";
++
++  // Convert success handling block
++  {
++    // Workaround: The param for llvm.dbg.declare() (or at least the one call we expect) gets deleted below
++    // (it is "oldTarget")
++    // We cannot find this through the param's users(), since LLVM does not count metadata uses such as
++    // `call void @llvm.dbg.declare(metadata i32* %9, ...)` as uses of the actual value
++    CallInst *debugCall;
++    for (auto &inst : *successSuccessor) {
++      if (isa<CallInst>(inst)) {
++        CallInst *call = dyn_cast<CallInst>(&inst);
++        if (call->getCalledFunction()->getName() == "llvm.dbg.declare") {
++          debugCall = call;
++          break;
++        }
++      }
++    }
++    assert(debugCall && "Success handler does not have call to llvm.dbg.declare()");
++    // Debug info gets messed up through our modifications anyway, so we don't care
++    convertedInstrs.push_back(debugCall);
++
++    Instruction *entryInst = successSuccessor->getFirstNonPHI();
++    assert(isa<BitCastInst>(entryInst));
++    BitCastInst *oldCast = dyn_cast<BitCastInst>(entryInst);
++    assert(successorCasts.count(oldCast) != 0 &&
++           "Success handler bitcast not found in previously generated list of usages");
++
++    BitCastInst *newCast = new BitCastInst(
++      resultAlloc,
++      getSgxfsFileSuccessType(mod)->getPointerTo(),
++      "",
++      oldCast
++    );
++    convertedInstrs.push_back(oldCast);
++
++    assert(oldCast->hasOneUse() && "Result of success bitcast has unexpected usage");
++    for (auto oldCastUser : oldCast->users()) {
++      assert(isa<GetElementPtrInst>(oldCastUser) && "Result of success bitcast has unexpected usage");
++      GetElementPtrInst *oldElementPtr = dyn_cast<GetElementPtrInst>(oldCastUser);
++
++      Value *indices[] = { ConstantInt::get(Type::getInt32Ty(mod->getContext()), 0),
++                           ConstantInt::get(Type::getInt32Ty(mod->getContext()), 1) };
++      GetElementPtrInst *newElementPtr = GetElementPtrInst::Create(
++        getSgxfsFileSuccessType(mod),
++        newCast,
++        indices,
++        "",
++        oldElementPtr
++      );
++      convertedInstrs.push_back(oldElementPtr);
++
++      assert(oldElementPtr->hasOneUse() && "Result of success getelementptr has unexpected usage");
++      for (auto oldElementPtrUser : oldElementPtr->users() ) {
++        assert(isa<LoadInst>(oldElementPtrUser) && "Result of success getelementptr has unexpected usage");
++        LoadInst *oldLoad = dyn_cast<LoadInst>(oldElementPtrUser);
++
++        LoadInst *newLoad = new LoadInst(
++          Type::getInt8Ty(mod->getContext())->getPointerTo(),
++          newElementPtr,
++          "",
++          oldLoad
++        );
++        convertedInstrs.push_back(oldLoad);
++
++        assert(oldLoad->hasNUses(2) && "Result of success load has unexpected usage");
++        for (auto oldLoadUser : oldLoad->users()) {
++          assert(isa<StoreInst>(oldLoadUser) && "Result of success load has unexpected usage");
++          StoreInst *oldStore = dyn_cast<StoreInst>(oldLoadUser);
++          Value *oldTarget = oldStore->getPointerOperand();
++
++          if (oldTarget->hasOneUse()) {
++            for (auto oldTargetUser : oldTarget->users()) {
++              assert(oldTargetUser == oldStore && "Target of success store has unexpected usage");
++              // Actually, there is a second use in a call to llvm.dbg.declare(), which we cannot find here
++              // because it's a metadata use (see workaround above)
++            }
++          } else {
++            AllocaInst *fileAlloc = new AllocaInst(
++              Type::getInt8Ty(mod->getContext())->getPointerTo(),
++              0,
++              "",
++              oldStore
++            );
++            new StoreInst(
++              newLoad,
++              fileAlloc,
++              oldStore
++            );
++
++            fileConversions[oldTarget] = fileAlloc;
++          }
++          convertedInstrs.push_back(oldStore);
++        }
++      }
++    }
++
++    dbgs() << "Enclave modification: Converted success handler for call to OpenOptions::open()\n";
++  }
++
++  // Convert error handling block
++  {
++    Instruction *entryInst = errorSuccessor->getFirstNonPHI();
++    assert(isa<BitCastInst>(entryInst));
++    BitCastInst *oldCast = dyn_cast<BitCastInst>(entryInst);
++    assert(successorCasts.count(oldCast) != 0 &&
++           "Error handler bitcast not found in previously generated list of usages");
++
++    BitCastInst *newCast = new BitCastInst(
++      resultAlloc,
++      // Luckily for us, the struct remains the same
++      oldCast->getDestTy(),
++      "",
++      oldCast
++    );
++
++    convertedInstrs.push_back(oldCast);
++    oldCast->replaceAllUsesWith(newCast);
++
++    dbgs() << "Enclave modification: Converted error handler for call to OpenOptions::open()\n";
++  }
++
++  dbgs() << "Enclave modification: Converted complete call to OpenOptions::open()\n";
++}
++
++void FsCallConverter::convertBufreaderNew(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  AllocaInst *readerAlloc = new AllocaInst(
++    getBufreaderSgxfileType(mod),
++    0,
++    "",
++    origCall
++  );
++
++  Value *oldArg1 = origCall->getArgOperand(1);
++  assert(isa<LoadInst>(oldArg1) && "BufReader::new has unexpected operand");
++  LoadInst *oldLoad = dyn_cast<LoadInst>(oldArg1);
++  Value *oldLoadSource = oldLoad->getPointerOperand();
++  assert(fileConversions.count(oldLoadSource) == 1 && "Missing converted File from previous step");
++  Value *newLoadSource = fileConversions[oldLoadSource];
++
++  LoadInst *newLoad = new LoadInst(
++    Type::getInt8Ty(mod->getContext())->getPointerTo(),
++    newLoadSource,
++    "",
++    origCall
++  );
++  Value *newArgs[] = { readerAlloc, newLoad };
++
++  assert(isa<InvokeInst>(origCall) && "Call to BufReader::new() has unexpected sub-type");
++  InvokeInst *oldInvoke = dyn_cast<InvokeInst>(origCall);
++
++  InvokeInst::Create(
++    getCadoteBufreaderNewDecl(mod),
++    oldInvoke->getNormalDest(),
++    oldInvoke->getUnwindDest(),
++    newArgs,
++    "",
++    origCall
++  );
++  convertedInstrs.push_back(origCall);
++
++  bufreaderConversions[origCall->getArgOperand(0)] = readerAlloc;
++  dbgs() << "Enclave modification: Converted call to BufReader::new()\n";
++}
++
++void FsCallConverter::convertBufreaderReadline(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  Function *oldCallee = origCall->getCalledFunction();
++  assert(oldCallee && "Could not get called function, this should never happen");
++  Type *resultType = oldCallee->getArg(0)->getType()->getPointerElementType();
++  Type *stringType = oldCallee->getArg(2)->getType()->getPointerElementType();
++  Function *newCallee = getCadoteBufreaderReadlineDecl(mod, resultType, stringType);
++
++  Value *oldArg1 = origCall->getArgOperand(1);
++  assert(bufreaderConversions.count(oldArg1) == 1 && "Missing converted BufReader from previous step");
++  Value *newArg1 = bufreaderConversions[oldArg1];
++  Value *newArgs[] = { origCall->getArgOperand(0), newArg1, origCall->getArgOperand(2) };
++
++  assert(isa<InvokeInst>(origCall) && "Call to BufReader::read_line() has unexpected sub-type");
++  InvokeInst *oldInvoke = dyn_cast<InvokeInst>(origCall);
++
++  InvokeInst::Create(
++    newCallee,
++    oldInvoke->getNormalDest(),
++    oldInvoke->getUnwindDest(),
++    newArgs,
++    "",
++    origCall
++  );
++  convertedInstrs.push_back(origCall);
++
++  dbgs() << "Enclave modification: Converted call to BufReader::read_line()\n";
++}
++
++void FsCallConverter::converFileWriteall(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  Value *oldArg0 = origCall->getArgOperand(0);
++  assert(fileConversions.count(oldArg0) == 1 && "Missing converted OpenOptions from previous step");
++  Value *newArg0 = fileConversions[oldArg0];
++  Value *newArgs[] = { newArg0, origCall->getArgOperand(1), origCall->getArgOperand(2) };
++
++  assert(isa<InvokeInst>(origCall) && "Call to File::write_all() has unexpected sub-type");
++  InvokeInst *oldInvoke = dyn_cast<InvokeInst>(origCall);
++
++  InvokeInst *newInvoke = InvokeInst::Create(
++    getFileWriteallDecl(mod),
++    oldInvoke->getNormalDest(),
++    oldInvoke->getUnwindDest(),
++    newArgs,
++    "",
++    origCall
++  );
++  oldInvoke->replaceAllUsesWith(newInvoke);
++  convertedInstrs.push_back(origCall);
++
++  dbgs() << "Enclave modification: Converted call to File::write_all()\n";
++}
++
++void FsCallConverter::convertFileDrops() {
++  for (auto kv : fileConversions) {
++    Value *oldFile = kv.first;
++    Value *newFile = kv.second;
++
++    for (auto oldFileUse : oldFile->users()) {
++      if (!isa<CallBase>(oldFileUse)) {
++        continue;
++      }
++      CallBase *oldCall = dyn_cast<CallBase>(oldFileUse);
++      if (oldCall->getCalledFunction() &&
++          demangleRustName(oldCall->getCalledFunction()->getName()) == "core::ptr::drop_in_place") {
++        Value *newArgs[] = { newFile };
++        CallInst::Create(
++          getCadoteDropSgxfileDecl(oldCall->getModule()),
++          newArgs,
++          "",
++          oldCall
++        );
++
++        assert(isa<CallInst>(oldCall) && "Call to drop_in_place has unexpected sub-type");
++        convertedInstrs.push_back(oldCall);
++      }
++    }
++  }
++
++  dbgs() << "Enclave modification: Converted drop_in_place() calls for File\n";
++}
++
++void FsCallConverter::convertBufreaderDrops() {
++  for (auto kv : bufreaderConversions) {
++    Value *oldReader = kv.first;
++    Value *newReader = kv.second;
++
++    for (auto oldReaderUse : oldReader->users()) {
++      if (!isa<CallBase>(oldReaderUse)) {
++        continue;
++      }
++      CallBase *oldCall = dyn_cast<CallBase>(oldReaderUse);
++      if (oldCall->getCalledFunction() &&
++          demangleRustName(oldCall->getCalledFunction()->getName()) == "core::ptr::drop_in_place") {
++        Value *newArgs[] = { newReader };
++
++        if (isa<CallInst>(oldCall)) {
++          CallInst::Create(
++            getCadoteDropBufreaderDecl(oldCall->getModule()),
++            newArgs,
++            "",
++            oldCall
++          );
++        } else if (isa<InvokeInst>(oldCall)) {
++          InvokeInst *oldInvoke = dyn_cast<InvokeInst>(oldCall);
++          InvokeInst::Create(
++            getCadoteDropBufreaderDecl(oldCall->getModule()),
++            oldInvoke->getNormalDest(),
++            oldInvoke->getUnwindDest(),
++            newArgs,
++            "",
++            oldCall
++          );
++        } else {
++          assert(false && "Call to drop_in_place() has unexpected sub-type");
++        }
++
++        convertedInstrs.push_back(oldCall);
++      }
++    }
++  }
++
++  dbgs() << "Enclave modification: Converted drop_in_place() calls for BufReader\n";
++}
++
++void FsCallConverter::eraseConvertedInstrs() {
++  for (auto instr = convertedInstrs.rbegin(); instr != convertedInstrs.rend(); ++instr) {
++    (*instr)->eraseFromParent();
++  }
++
++  dbgs() << "Enclave modification: Removed all converted instructions\n";
++}
++
++
++void insertSgxUsage(Function *func) {
++  std::vector<CallBase *> calls;
++
++  for (auto &bblock : *func) {
++    for (auto &inst : bblock) {
++      if (isa<CallBase>(&inst)) {
++        calls.push_back(dyn_cast<CallBase>(&inst));
++      }
++    }
++  }
++
++  dbgs() << "Enclave modification: Starting conversions in function " << func->getName() << "\n";
++  FsCallConverter converter;
++
++  for (auto call : calls) {
++    Function *callee = call->getCalledFunction();
++    if (!callee) {
++      // TODO: Indirect calls
++      return;
++    }
++    std::string calleeName = demangleRustName(callee->getName());
++
++    if (calleeName == "sgx_tstd::fs::OpenOptions::new") {
++      converter.convertOpenoptionsNew(call);
++    } else if (calleeName == "sgx_tstd::fs::OpenOptions::create") {
++      converter.convertOpenoptionsCreate(call);
++    } else if (calleeName == "sgx_tstd::fs::OpenOptions::read") {
++      converter.convertOpenoptionsRead(call);
++    } else if (calleeName == "sgx_tstd::fs::OpenOptions::append") {
++      converter.convertOpenoptionsAppend(call);
++    } else if (calleeName == "sgx_tstd::fs::OpenOptions::open") {
++      converter.convertOpenoptionsOpen(call);
++    } else if (calleeName == "sgx_tstd::io::buffered::BufReader<R>::new") {
++      converter.convertBufreaderNew(call);
++    } else if (calleeName == "sgx_tstd::io::BufRead::read_line") {
++      converter.convertBufreaderReadline(call);
++    } else if (calleeName == "sgx_tstd::io::Write::write_all") {
++      converter.converFileWriteall(call);
++    }
++  }
++
++  converter.convertBufreaderDrops();
++  converter.convertFileDrops();
++  converter.eraseConvertedInstrs();
++}
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index e7bda11c914f..463aa3c84839 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -39,6 +39,7 @@ void EdlFile::writeFile() {
+   fstream << "from \"sgx_stdio.edl\" import *;\n";
+   fstream << "from \"sgx_backtrace.edl\" import *;\n";
+   fstream << "from \"sgx_tstdc.edl\" import *;\n";
++  fstream << "from \"sgx_tprotected_fs.edl\" import *;\n";
+   fstream << "\n";
+ 
+   for (auto entry : structs) {
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index 410c82dc46a8..805e46c1f99e 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -13,6 +13,7 @@
+ #include "llvm/Transforms/Utils.h"
+ 
+ #include "llvm/Transforms/Utils/EnclavizationLibPass.h"
++#include "llvm/Transforms/Utils/Enclavization/EnclaveModify.h"
+ #include "llvm/Transforms/Utils/Enclavization/Export.h"
+ #include "llvm/Transforms/Utils/Enclavization/Support.h"
+ #include "llvm/Transforms/Utils/Enclavization/Wrappers.h"
+@@ -37,19 +38,21 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+   EdlFile edlFile(edlFileName);
+   LLVM_DEBUG(dbgs() << "Writing EDL definitions to " << edlFileName << "\n");
+ 
++  std::unordered_set<Function *> enclavedFuncs;
+   for (auto *&origCall : callsToWrap) {
++    Function *calledFunc = origCall->getCalledFunction();
+     // TODO: Indirect calls
+-    if (origCall->getCalledFunction()) {
+-      std::vector<Value *> callArgs;
+-      for (auto arg = origCall->arg_begin(); arg != origCall->arg_end(); ++arg) {
+-        callArgs.push_back(arg->get());
+-      }
+-
++    if (calledFunc) {
++      enclavedFuncs.insert(calledFunc);
+       // Add postgate function to the module
+       getPostgateImpl(origCall, edlFile);
+     }
+   }
+ 
++  for (auto func : enclavedFuncs) {
++    insertSgxUsage(func);
++  }
++
+   return true;
+ }
+ 
+-- 
+2.25.1
+

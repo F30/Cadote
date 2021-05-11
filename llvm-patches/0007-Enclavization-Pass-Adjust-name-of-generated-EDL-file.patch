@@ -1,7 +1,7 @@
 From e0a04b5e3e559f4f262a2b10a1448adab02fdf86 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 6 Apr 2021 15:48:05 +0000
-Subject: [PATCH 07/11] Enclavization Pass: Adjust name of generated EDL file
+Subject: [PATCH 07/14] Enclavization Pass: Adjust name of generated EDL file
 
 ---
  llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp | 2 +-

@@ -1,3 +1,22 @@
+#![no_std]
+
+#[cfg(feature = "enclavization_lib")]
+#[macro_use]
+extern crate sgx_tstd as std;
+
+// For now, `macro_use` is required for std, see https://github.com/rust-lang/rust/issues/53977
+#[cfg(feature = "enclavization_bin")]
+#[macro_use]
+extern crate std;
+
+use std::prelude::v1::*;
+
+#[cfg(feature = "enclavization_lib")]
+extern crate cadote_trusted_runtime;
+
+#[cfg(feature = "enclavization_bin")]
+extern crate cadote_untrusted_runtime;
+
 use std::io::BufRead;
 use std::io::BufReader;
 use std::fs;
@@ -5,6 +24,7 @@ use std::io::Error as IOError;
 use std::io::Write;
 
 use rustyline;
+
 
 static SHADOW_FILENAME: &str = "users.shadow";
 
@@ -27,7 +47,7 @@ fn initial_root_prompt() {
   let mut rl = rustyline::Editor::<()>::new();
   let password = get_line_or_exit(&mut rl, "Password: ");
 
-  store_user("root", &password).expect("Could not write user to file");
+  store_user_enclaved_("root", &password).expect("Could not write user to file");
   println!("Stored.");
   admin_loop();
 }
@@ -43,7 +63,7 @@ fn login_prompt() {
     username = get_line_or_exit(&mut rl, "Username: ");
     password = get_line_or_exit(&mut rl, "Password: ");
 
-    if check_password(&username, &password).expect("Could not read user file") {
+    if check_password_enclaved_(&username, &password).expect("Could not read user file") {
       break;
     }
     println!("Wrong, try again!");
@@ -81,7 +101,7 @@ fn admin_loop() {
       if username.is_empty() || password.is_empty() || username.contains(":") {
         println!("Invalid input, NOT stored!");
       } else {
-        store_user(&username, &password).expect("Could not write user to file");
+        store_user_enclaved_(&username, &password).expect("Could not write user to file");
         println!("Stored.")
       }
       println!();
@@ -106,7 +126,7 @@ fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
   line
 }
 
-fn store_user(username: &str, password: &str) -> Result<(), IOError> {
+fn store_user_enclaved_(username: &str, password: &str) -> Result<(), IOError> {
   let mut shadow_file = fs::OpenOptions::new().create(true).append(true).open(SHADOW_FILENAME)?;
   // TODO: Hash
   let line = format!("{}:{}\n", username, password);
@@ -115,7 +135,7 @@ fn store_user(username: &str, password: &str) -> Result<(), IOError> {
   Ok(())
 }
 
-fn check_password(username: &str, check_pwd: &str) -> Result<bool, IOError> {
+fn check_password_enclaved_(username: &str, check_pwd: &str) -> Result<bool, IOError> {
   let shadow_file = fs::OpenOptions::new().read(true).open(SHADOW_FILENAME)?;
   let mut shadow_reader = BufReader::new(shadow_file);
 
