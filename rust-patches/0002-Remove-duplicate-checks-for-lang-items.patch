@@ -1,0 +1,110 @@
+From 0198bf270d06420f138289325ca7d38a5e2484da Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 28 Apr 2021 11:54:11 +0000
+Subject: [PATCH 2/3] Remove duplicate checks for lang items
+
+This caused issue when compiling code as library for SGX in Cadote.
+Not really sure about the consequences, but I suspect duplicate items
+will show up during linking at the latest.
+---
+ compiler/rustc_passes/src/lang_items.rs | 77 +------------------------
+ 1 file changed, 3 insertions(+), 74 deletions(-)
+
+diff --git a/compiler/rustc_passes/src/lang_items.rs b/compiler/rustc_passes/src/lang_items.rs
+index 0ae0c381a11..3ce71490e05 100644
+--- a/compiler/rustc_passes/src/lang_items.rs
++++ b/compiler/rustc_passes/src/lang_items.rs
+@@ -10,7 +10,6 @@
+ use crate::check_attr::target_from_impl_item;
+ use crate::weak_lang_items;
+ 
+-use rustc_middle::middle::cstore::ExternCrate;
+ use rustc_middle::ty::TyCtxt;
+ 
+ use rustc_ast::Attribute;
+@@ -106,79 +105,9 @@ impl LanguageItemCollector<'tcx> {
+     }
+ 
+     fn collect_item(&mut self, item_index: usize, item_def_id: DefId) {
+-        // Check for duplicates.
+-        if let Some(original_def_id) = self.items.items[item_index] {
+-            if original_def_id != item_def_id {
+-                let lang_item = LangItem::from_u32(item_index as u32).unwrap();
+-                let name = lang_item.name();
+-                let mut err = match self.tcx.hir().span_if_local(item_def_id) {
+-                    Some(span) => struct_span_err!(
+-                        self.tcx.sess,
+-                        span,
+-                        E0152,
+-                        "found duplicate lang item `{}`",
+-                        name
+-                    ),
+-                    None => match self.tcx.extern_crate(item_def_id) {
+-                        Some(ExternCrate { dependency_of, .. }) => {
+-                            self.tcx.sess.struct_err(&format!(
+-                                "duplicate lang item in crate `{}` (which `{}` depends on): `{}`.",
+-                                self.tcx.crate_name(item_def_id.krate),
+-                                self.tcx.crate_name(*dependency_of),
+-                                name
+-                            ))
+-                        }
+-                        _ => self.tcx.sess.struct_err(&format!(
+-                            "duplicate lang item in crate `{}`: `{}`.",
+-                            self.tcx.crate_name(item_def_id.krate),
+-                            name
+-                        )),
+-                    },
+-                };
+-                if let Some(span) = self.tcx.hir().span_if_local(original_def_id) {
+-                    err.span_note(span, "the lang item is first defined here");
+-                } else {
+-                    match self.tcx.extern_crate(original_def_id) {
+-                        Some(ExternCrate { dependency_of, .. }) => {
+-                            err.note(&format!(
+-                                "the lang item is first defined in crate `{}` (which `{}` depends on)",
+-                                self.tcx.crate_name(original_def_id.krate),
+-                                self.tcx.crate_name(*dependency_of)
+-                            ));
+-                        }
+-                        _ => {
+-                            err.note(&format!(
+-                                "the lang item is first defined in crate `{}`.",
+-                                self.tcx.crate_name(original_def_id.krate)
+-                            ));
+-                        }
+-                    }
+-                    let mut note_def = |which, def_id: DefId| {
+-                        let crate_name = self.tcx.crate_name(def_id.krate);
+-                        let note = if def_id.is_local() {
+-                            format!("{} definition in the local crate (`{}`)", which, crate_name)
+-                        } else {
+-                            let paths: Vec<_> = self
+-                                .tcx
+-                                .crate_extern_paths(def_id.krate)
+-                                .iter()
+-                                .map(|p| p.display().to_string())
+-                                .collect();
+-                            format!(
+-                                "{} definition in `{}` loaded from {}",
+-                                which,
+-                                crate_name,
+-                                paths.join(", ")
+-                            )
+-                        };
+-                        err.note(&note);
+-                    };
+-                    note_def("first", original_def_id);
+-                    note_def("second", item_def_id);
+-                }
+-                err.emit();
+-            }
+-        }
++        // Duplicate check removed for Cadote compilation
++        // Not really sure about the consequences, but I suspect duplicate items will show up during
++        // linking at the latest
+ 
+         // Matched.
+         self.items.items[item_index] = Some(item_def_id);
+-- 
+2.25.1
+
