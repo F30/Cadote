@@ -94,7 +94,9 @@ fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
     Ok(l) => l,
     Err(rustyline::error::ReadlineError::Eof) => String::from(""),
     Err(rustyline::error::ReadlineError::Interrupted) => {
-      std::process::exit(0);
+      // TODO, sgx_tstd doesn't support std::process::exit()
+      //std::process::exit(0);
+      panic!("Regular exit");
     },
     Err(e) => {
       panic!("Could not get input: {}", e);
@@ -115,9 +117,15 @@ fn store_user(username: &str, password: &str) -> Result<(), IOError> {
 
 fn check_password(username: &str, check_pwd: &str) -> Result<bool, IOError> {
   let shadow_file = fs::OpenOptions::new().read(true).open(SHADOW_FILENAME)?;
-  let shadow_reader = BufReader::new(shadow_file);
+  let mut shadow_reader = BufReader::new(shadow_file);
 
-  for line in shadow_reader.lines().map(|l| l.unwrap()) {
+  loop {
+    let mut line = String::new();
+    if shadow_reader.read_line(&mut line).unwrap() == 0 {
+      break;
+    }
+    line = line.trim_end().to_string();
+
     let prefix = format!("{}:", username);
     let right_pwd = match line.strip_prefix(&prefix) {
       Some(p) => p,
