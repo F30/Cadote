@@ -1,3 +1,15 @@
+Cadote: Compiler-Aided Development of Trusted Enclaves
+======================================================
+
+This is the code for my Masters Thesis. It is quite hacky research-grade code, where I had to go to the limit of what is possible with an LLVM pass. Also, there is quite some C++ code and I'm not much of a C++ programmer. Sorry about that.
+
+For details on the idea and its limitations, read the actual thesis.
+
+Setup
+-----
+### Path Adjustments
+You might have to adjust some (hardcoded) paths to the ones of your local installations. These can be found by `grep`-ing for "ADJUST".
+
 Copyright
 ---------
 The "llvm-patches" directory contains patch files to [LLVM project](https://github.com/llvm/llvm-project) code. LLVM consists of contributions from various authors, licensed under the Apache (Version 2.0) license with LLVM Exceptions and/or the Legacy LLVM license.

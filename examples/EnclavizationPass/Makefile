@@ -29,12 +29,16 @@ RUSTUP_TOOLCHAIN := custom-llvm-nightly-2020-10-25
 CARGO := LD_LIBRARY_PATH=/usr/local/lib/llvm-11-rs-debug/lib cargo +$(RUSTUP_TOOLCHAIN)
 #CARGO := LD_LIBRARY_PATH=/usr/local/lib/llvm-11-rs-debug/lib valgrind --tool=none --trace-children=yes cargo +$(RUSTUP_TOOLCHAIN)
 
+# ADJUST: Overwrite this or set environment variable to a local copy of
+# https://github.com/apache/incubator-teaclave-sgx-sdk (version 1.1.3)
 TEACLAVE_SDK ?= $(HOME)/ext/incubator-teaclave-sgx-sdk
 
 
 #### SGX SDK Settings ####
+# ADJUST: Overwrite this or set environment variable to an installation of the Intel Linux SGX SDK
 SGX_SDK ?= $(HOME)/.sgxsdk/sgxsdk
 SGX_MODE ?= HW
+# ADJUST: Overwrite this or set environment variable to a private key for enclave signatures
 SGX_SIGNING_KEY ?= $(HOME)/sgx-sign/private_key.pem
 
 include $(TEACLAVE_SDK)/buildenv.mk
