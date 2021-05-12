@@ -10,6 +10,8 @@ use std::ptr;
 use sgx_trts::trts;
 use sgx_tstd::sgxfs;
 
+mod io_error;
+
 
 #[no_mangle]
 pub fn cadote_check_arg_ptr(ptr: *const u8, size: usize) {
@@ -66,4 +68,14 @@ pub unsafe fn cadote_drop_sgxfs_sgxfile(file: &mut sgxfs::SgxFile) {
 #[no_mangle]
 pub unsafe fn cadote_drop_io_bufreader(reader: &mut sgx_tstd::io::BufReader<sgxfs::SgxFile>) {
   ptr::drop_in_place(reader);
+}
+
+#[no_mangle]
+pub fn cadote_transform_ioresult_unit(result: Result<(), sgx_tstd::io::Error>) -> io_error::Result<()> {
+  io_error::transform_ioresult(result)
+}
+
+#[no_mangle]
+pub fn cadote_transform_ioresult_bool(result: Result<bool, sgx_tstd::io::Error>) -> io_error::Result<bool> {
+  io_error::transform_ioresult(result)
 }

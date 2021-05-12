@@ -1,0 +1,52 @@
+From 766269a3a982e2acdc84dfb676d16e7043fd313b Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 12 May 2021 14:10:43 +0000
+Subject: [PATCH 16/16] Enclavization Pass: Update mangled names
+
+---
+ llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index 330b43158ec4..d9fcf6b3c385 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -100,7 +100,7 @@ static StructType *getBufreaderSgxfileType(Module *mod) {
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_NEW_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions3new17h2276544802598df9E"
++#define MANGLED_SGXFS_OPENOPTIONS_NEW_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions3new17hf4c8178c8abfed24E"
+ 
+ static Function *getSgxfsOpenoptionsNewDecl(Module *mod) {
+   Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_NEW_NAME);
+@@ -116,7 +116,7 @@ static Function *getSgxfsOpenoptionsNewDecl(Module *mod) {
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_READ_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions4read17h01f80b8cd0b64d9eE"
++#define MANGLED_SGXFS_OPENOPTIONS_READ_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions4read17hb91f6c1788ad394aE"
+ 
+ static Function *getSgxfsOpenoptionsReadDecl(Module *mod) {
+   Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_READ_NAME);
+@@ -133,7 +133,7 @@ static Function *getSgxfsOpenoptionsReadDecl(Module *mod) {
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions6append17h36f5d14fa67b372bE"
++#define MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions6append17h14079cb0dd2caf72E"
+ 
+ static Function *getSgxfsOpenoptionsAppendDecl(Module *mod) {
+   Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME);
+@@ -213,7 +213,7 @@ static Function *getCadoteBufreaderReadlineDecl(Module *mod, Type *resultType, T
+ }
+ 
+ 
+-#define MANGLED_IO_WRITE_WRITEALL_NAME "_ZN8sgx_tstd2io5Write9write_all17he0e808b1d50ef8e2E"
++#define MANGLED_IO_WRITE_WRITEALL_NAME "_ZN8sgx_tstd2io5Write9write_all17h3e2682f553f4eb0fE"
+ 
+ static Function *getFileWriteallDecl(Module *mod) {
+   Function *func = mod->getFunction(MANGLED_IO_WRITE_WRITEALL_NAME);
+-- 
+2.25.1
+

@@ -21,3 +21,5 @@ Some code in the "llvm-pass" directory is based on or inspired by the [llvm-tuto
 A header file and library compiled from [rustc-demangle](https://github.com/alexcrichton/rustc-demangle) are contained in the "llvm-pass/vendor" directory, as well as the patch file "llvm-patches/0001-Add-Enclavization-Pass.patch". rustc-demangle was created by Alex Crichton and other contributors and is dual-licensed under the Apache (Version 2.0) and MIT licenses.
 
 Some code in the "rust-enclave" directory is based on or inspired by the [Apache Teaclave Rust-SGX SDK](https://github.com/apache/incubator-teaclave-sgx-sdk) project. The project's code has been licensed to the Apache Software Foundation under contributor license agreements and is available under the Apache (Version 2.0) license.
+
+The file "support/cadote_trusted_runtime/src/io_error.rs" is partly based on a file from the Apache Teaclave Rust-SGX SDK, which in turn appears to have adopted it from the Rust project. Copyright details for both projects see above.

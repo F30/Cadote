@@ -1,7 +1,7 @@
 From a4b187f9c8a7d287bbffa59af388d75f8092100f Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Fri, 2 Apr 2021 16:21:50 +0000
-Subject: [PATCH 04/14] Enclavization Pass: Split into two passes for binary
+Subject: [PATCH 04/16] Enclavization Pass: Split into two passes for binary
  and lib
 
 Both are supposed to be run on the same code in separate steps. One is

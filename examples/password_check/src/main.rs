@@ -47,7 +47,7 @@ fn initial_root_prompt() {
   let mut rl = rustyline::Editor::<()>::new();
   let password = get_line_or_exit(&mut rl, "Password: ");
 
-  store_user_enclaved_("root", &password).expect("Could not write user to file");
+  store_user_enclaved_ioresult_unit_("root", &password).expect("Could not write user to file");
   println!("Stored.");
   admin_loop();
 }
@@ -63,7 +63,7 @@ fn login_prompt() {
     username = get_line_or_exit(&mut rl, "Username: ");
     password = get_line_or_exit(&mut rl, "Password: ");
 
-    if check_password_enclaved_(&username, &password).expect("Could not read user file") {
+    if check_password_enclaved_ioresult_bool_(&username, &password).expect("Could not read user file") {
       break;
     }
     println!("Wrong, try again!");
@@ -101,7 +101,7 @@ fn admin_loop() {
       if username.is_empty() || password.is_empty() || username.contains(":") {
         println!("Invalid input, NOT stored!");
       } else {
-        store_user_enclaved_(&username, &password).expect("Could not write user to file");
+        store_user_enclaved_ioresult_unit_(&username, &password).expect("Could not write user to file");
         println!("Stored.")
       }
       println!();
@@ -126,7 +126,7 @@ fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
   line
 }
 
-fn store_user_enclaved_(username: &str, password: &str) -> Result<(), IOError> {
+fn store_user_enclaved_ioresult_unit_(username: &str, password: &str) -> Result<(), IOError> {
   let mut shadow_file = fs::OpenOptions::new().create(true).append(true).open(SHADOW_FILENAME)?;
   // TODO: Hash
   let line = format!("{}:{}\n", username, password);
@@ -135,7 +135,7 @@ fn store_user_enclaved_(username: &str, password: &str) -> Result<(), IOError> {
   Ok(())
 }
 
-fn check_password_enclaved_(username: &str, check_pwd: &str) -> Result<bool, IOError> {
+fn check_password_enclaved_ioresult_bool_(username: &str, check_pwd: &str) -> Result<bool, IOError> {
   let shadow_file = fs::OpenOptions::new().read(true).open(SHADOW_FILENAME)?;
   let mut shadow_reader = BufReader::new(shadow_file);
 
