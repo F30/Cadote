@@ -33,7 +33,7 @@ pub fn cadote_check_return_ptr(ptr: *const u8, size: usize) {
  * Non-generic version of sgx_tstd::sgxfs::OpenOptions::open() to avoid monomorphization hassle.
  */
 #[no_mangle]
-pub fn cadote_sgxfs_openoptions_open(openopts: &sgxfs::OpenOptions, path: &str) -> std::io::Result<sgxfs::SgxFile> {
+pub fn cadote_sgxfs_openoptions_open(openopts: &sgxfs::OpenOptions, path: &str) -> sgx_tstd::io::Result<sgxfs::SgxFile> {
   openopts.open(path)
 }
 
@@ -50,7 +50,7 @@ pub fn cadote_io_bufreader_new(file: sgxfs::SgxFile) -> sgx_tstd::io::BufReader<
  */
 #[no_mangle]
 pub fn cadote_io_bufreader_readline(reader: &mut sgx_tstd::io::BufReader<sgxfs::SgxFile>,
-                                    buf: &mut String) -> std::io::Result<usize> {
+                                    buf: &mut String) -> sgx_tstd::io::Result<usize> {
   reader.read_line(buf)
 }
 
