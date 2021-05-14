@@ -1,0 +1,370 @@
+From 3875450a11b0a54061b35e75ea6b404ee52e5169 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Thu, 13 May 2021 13:07:18 +0000
+Subject: [PATCH 17/18] Enclavization Pass: Refactor main pass files
+
+The main change is that EnclavizationLibPass will generate its list of
+functions to wrap directly from a module's functions, not through calls.
+---
+ .../Transforms/Utils/Enclavization/Support.h  | 10 ++--
+ .../Transforms/Utils/Enclavization/Wrappers.h | 11 ++---
+ .../Utils/Enclavization/EnclaveModify.cpp     |  1 +
+ .../Utils/Enclavization/Support.cpp           | 39 +++-------------
+ .../Utils/Enclavization/Wrappers.cpp          | 23 ++++------
+ .../Transforms/Utils/EnclavizationBinPass.cpp | 46 +++++++++++++------
+ .../Transforms/Utils/EnclavizationLibPass.cpp | 42 ++++++++---------
+ 7 files changed, 76 insertions(+), 96 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
+index 48a0845ef556..81d942ec7c1d 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
+@@ -5,18 +5,16 @@
+ #include <vector>
+ 
+ #include "llvm/ADT/StringRef.h"
+-#include "llvm/IR/InstrTypes.h"
+-#include "llvm/IR/Module.h"
++#include "llvm/IR/Function.h"
+ 
+ 
+ std::string demangleRustName(llvm::StringRef);
+ 
+-llvm::Function *getMainFunc(llvm::Module &);
+-
+-std::vector<llvm::CallBase *> getCallsToWrap(llvm::Module &);
+-
+ std::string rustNameWithoutHash(llvm::StringRef);
+ 
++bool isEnclavedFunc(llvm::Function *);
++
++
+ inline bool isMangledRustName(llvm::StringRef name) {
+   // Prefixes for old and new (v0) Rust mangled names, Linux-only
+   return name.startswith("_ZN") || name.startswith("_R");
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
+index c7dd3b6efda7..c07712a5d05d 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
+@@ -2,20 +2,19 @@
+ #define LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_WRAPPERS_H
+ 
+ #include "llvm/IR/Function.h"
+-#include "llvm/IR/InstrTypes.h"
+ 
+ #include "llvm/Transforms/Utils/Enclavization/Export.h"
+ 
+ 
+-llvm::Function *getPregateDecl(llvm::CallBase *);
++llvm::Function *getPregateDecl(llvm::Function *);
+ 
+-llvm::Function *getPregateImpl(llvm::CallBase *);
++llvm::Function *getPregateImpl(llvm::Function *);
+ 
+-llvm::Function *getPostgateRealDecl(llvm::CallBase *);
++llvm::Function *getPostgateRealDecl(llvm::Function *);
+ 
+-llvm::Function *getPostgateProxyDecl(llvm::CallBase *);
++llvm::Function *getPostgateProxyDecl(llvm::Function *);
+ 
+-llvm::Function *getPostgateImpl(llvm::CallBase *, EdlFile &);
++llvm::Function *getPostgateImpl(llvm::Function *, EdlFile &);
+ 
+ 
+ #endif
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index d9fcf6b3c385..c8c0579a4a0c 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -5,6 +5,7 @@
+ #include "llvm/IR/Constants.h"
+ #include "llvm/IR/DerivedTypes.h"
+ #include "llvm/IR/Function.h"
++#include "llvm/IR/Module.h"
+ #include "llvm/IR/InstrTypes.h"
+ #include "llvm/IR/Instructions.h"
+ #include "llvm/IR/Value.h"
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Support.cpp b/llvm/lib/Transforms/Utils/Enclavization/Support.cpp
+index 6129c52ddc61..47a443bd1d15 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Support.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Support.cpp
+@@ -2,14 +2,9 @@
+ #include <regex>
+ #include <stdexcept>
+ #include <string>
+-#include <vector>
+ 
+ #include "llvm/ADT/StringRef.h"
+ #include "llvm/IR/Function.h"
+-#include "llvm/IR/Instructions.h"
+-#include "llvm/IR/InstrTypes.h"
+-#include "llvm/IR/Module.h"
+-#include "llvm/Support/Casting.h"
+ 
+ #include "llvm/Transforms/Utils/Enclavization/Support.h"
+ #include "vendor/rustc_demangle.h"
+@@ -59,35 +54,13 @@ std::string rustNameWithoutHash(StringRef name) {
+ }
+ 
+ 
+-std::vector<CallBase *> getCallsToWrap(Module &mod) {
+-  std::vector<CallBase *> callsToWrap;
++bool isEnclavedFunc(Function *func) {
++  std::string name = demangleRustName(func->getName());
+ 
+-  for (auto &func : mod) {
+-    if (func.isDeclaration()) {
+-      continue;
+-    }
+-
+-    for (auto &bblock : func) {
+-      for (auto &inst : bblock) {
+-        if (!isa<CallInst>(&inst) && !isa<InvokeInst>(&inst)) {
+-          continue;
+-        }
+-
+-        auto origCall = dyn_cast<CallBase>(&inst);
+-        Function *callee = origCall->getCalledFunction();
+-
+-        // TODO: Indirect calls
+-        if (callee) {
+-          std::string name = demangleRustName(callee->getName());
+-          for (auto suffix : TO_WRAP_SUFFIXES) {
+-            if (strEndsWith(name, suffix)) {
+-              callsToWrap.push_back(origCall);
+-            }
+-          }
+-        }
+-      }
++  for (auto suffix : TO_WRAP_SUFFIXES) {
++    if (strEndsWith(name, suffix)) {
++      return true;
+     }
+   }
+-
+-  return callsToWrap;
++  return false;
+ }
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index 0fa16cff2c7e..6a66d0c46454 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -85,8 +85,7 @@ static std::string getPostgateName(Function *func) {
+ }
+ 
+ 
+-Function *getPregateDecl(CallBase *callToWrap) {
+-  Function *wrappedFunc = callToWrap->getCalledFunction();
++Function *getPregateDecl(Function *wrappedFunc) {
+   Module *mod = wrappedFunc->getParent();
+ 
+   std::string gateName = getPregateName(wrappedFunc);
+@@ -112,12 +111,11 @@ Function *getPregateDecl(CallBase *callToWrap) {
+ }
+ 
+ 
+-Function *getPregateImpl(CallBase *callToWrap) {
+-  Function *wrappedFunc = callToWrap->getCalledFunction();
++Function *getPregateImpl(Function *wrappedFunc) {
+   Module *mod = wrappedFunc->getParent();
+ 
+-  Function *postgateDecl = getPostgateProxyDecl(callToWrap);
+-  Function *pregateFunc = getPregateDecl(callToWrap);
++  Function *postgateDecl = getPostgateProxyDecl(wrappedFunc);
++  Function *pregateFunc = getPregateDecl(wrappedFunc);
+   // Check if function has any BasicBlocks
+   if (!pregateFunc->empty()) {
+     // Implementation has already been created in a previous call
+@@ -224,10 +222,8 @@ Function *getPregateImpl(CallBase *callToWrap) {
+ }
+ 
+ 
+-Function *getPostgateRealDecl(CallBase *callToWrap) {
++Function *getPostgateRealDecl(Function *wrappedFunc) {
+   assert(!createdPostageProxyDecl && "Can only declare either real or proxy postgate");
+-
+-  Function *wrappedFunc = callToWrap->getCalledFunction();
+   Module *mod = wrappedFunc->getParent();
+ 
+   std::string gateName = getPostgateName(wrappedFunc);
+@@ -253,10 +249,8 @@ Function *getPostgateRealDecl(CallBase *callToWrap) {
+ }
+ 
+ 
+-Function *getPostgateProxyDecl(CallBase *callToWrap) {
++Function *getPostgateProxyDecl(Function *wrappedFunc) {
+   assert(!createdPostageRealDecl && "Can only declare either real or proxy postgate");
+-
+-  Function *wrappedFunc = callToWrap->getCalledFunction();
+   Module *mod = wrappedFunc->getParent();
+ 
+   std::string gateName = getPostgateName(wrappedFunc);
+@@ -385,11 +379,10 @@ static void sizedRecursivePointerCheck(Value *value, size_t size, Function *chec
+ }
+ 
+ 
+-Function *getPostgateImpl(CallBase *callToWrap, EdlFile &edlFile) {
+-  Function *wrappedFunc = callToWrap->getCalledFunction();
++Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+   Module *mod = wrappedFunc->getParent();
+ 
+-  Function *postgateFunc = getPostgateRealDecl(callToWrap);
++  Function *postgateFunc = getPostgateRealDecl(wrappedFunc);
+   // Check if function has any BasicBlocks
+   if (!postgateFunc->empty()) {
+     // Implementation has already been created in a previous call
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
+index 0ab1f578100b..f645ee8a23db 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
+@@ -1,18 +1,17 @@
+ #include <stdexcept>
+ #include <string>
+ #include <unordered_set>
+-#include <vector>
+ 
+ #include "llvm/InitializePasses.h"
++#include "llvm/IR/Function.h"
+ #include "llvm/IR/InstrTypes.h"
+ #include "llvm/IR/Module.h"
+ #include "llvm/IR/PassManager.h"
+-#include "llvm/IR/Value.h"
+-#include "llvm/Passes/PassPlugin.h"
+ #include "llvm/Passes/PassBuilder.h"
++#include "llvm/Passes/PassPlugin.h"
++#include "llvm/Support/Casting.h"
+ #include "llvm/Support/Debug.h"
+ #include "llvm/Transforms/Utils.h"
+-#include "llvm/Transforms/Utils/BasicBlockUtils.h"
+ 
+ #include "llvm/Transforms/Utils/EnclavizationBinPass.h"
+ #include "llvm/Transforms/Utils/Enclavization/RuntimeLib.h"
+@@ -41,9 +40,33 @@ bool EnclavizationBin::runOnModule(Module &mod) {
+     mainFunc->getEntryBlock().getFirstNonPHI()
+   );
+ 
+-  // First get list of calls to be wrapped in order to not change a Module, Function or BasicBlock
++  // First, generate list of calls to be wrapped in order to not change a Module, Function or BasicBlock
+   // while iterating over it
+-  std::vector<CallBase *> callsToWrap = getCallsToWrap(mod);
++  std::unordered_set<CallBase *> callsToWrap;
++
++  for (auto &func : mod) {
++    if (func.isDeclaration()) {
++      continue;
++    }
++
++    for (auto &bblock : func) {
++      for (auto &inst : bblock) {
++        if (!isa<CallBase>(&inst)) {
++          continue;
++        }
++        auto origCall = dyn_cast<CallBase>(&inst);
++        Function *callee = origCall->getCalledFunction();
++
++        // TODO: Indirect calls
++        if (callee) {
++          if (isEnclavedFunc(callee)) {
++            callsToWrap.insert(origCall);
++          }
++        }
++      }
++    }
++  }
++
+   if (callsToWrap.empty()) {
+     return false;
+   }
+@@ -51,14 +74,11 @@ bool EnclavizationBin::runOnModule(Module &mod) {
+ 
+   std::unordered_set<Function *> replacedFuncs;
+ 
+-  for (auto *&origCall : callsToWrap) {
++  for (auto origCall : callsToWrap) {
+     Function *callee = origCall->getCalledFunction();
+-    // TODO: Indirect calls
+-    if (callee) {
+-      FunctionCallee pregateFunc = getPregateImpl(origCall);
+-      origCall->setCalledFunction(pregateFunc);
+-      replacedFuncs.insert(callee);
+-    }
++    FunctionCallee pregateFunc = getPregateImpl(callee);
++    origCall->setCalledFunction(pregateFunc);
++    replacedFuncs.insert(callee);
+   }
+ 
+   // Delete original functions after replacing all calls in the previous loop
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index 805e46c1f99e..5ed8ed4bc447 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -1,14 +1,12 @@
+ #include <string>
+ #include <unordered_set>
+-#include <vector>
+ 
+ #include "llvm/InitializePasses.h"
+-#include "llvm/IR/InstrTypes.h"
++#include "llvm/IR/Function.h"
+ #include "llvm/IR/Module.h"
+ #include "llvm/IR/PassManager.h"
+-#include "llvm/IR/Value.h"
+-#include "llvm/Passes/PassPlugin.h"
+ #include "llvm/Passes/PassBuilder.h"
++#include "llvm/Passes/PassPlugin.h"
+ #include "llvm/Support/Debug.h"
+ #include "llvm/Transforms/Utils.h"
+ 
+@@ -25,32 +23,30 @@ using namespace llvm;
+ 
+ 
+ bool EnclavizationLib::runOnModule(Module &mod) {
+-  // First get list of calls to be wrapped in order to not change a Module, Function or BasicBlock
+-  // while iterating over it
+-  std::vector<CallBase *> callsToWrap = getCallsToWrap(mod);
+-  if (callsToWrap.empty()) {
+-    return false;
++  // First, generate list of functions to be wrapped or removed, in order to not change a Module while
++  // iterating over it
++  std::unordered_set<Function *> funcsToWrap;
++
++  for (auto &func : mod) {
++    if (func.isDeclaration()) {
++      continue;
++    }
++
++    if (isEnclavedFunc(&func)) {
++      funcsToWrap.insert(&func);
++    }
+   }
+-  LLVM_DEBUG(dbgs() << "Found " << callsToWrap.size() << " calls to wrap\n");
++  LLVM_DEBUG(dbgs() << "Found " << funcsToWrap.size() << " functions to wrap\n");
+ 
+   // Write EDL file to current working directory
+   std::string edlFileName = "enclave.edl";
+   EdlFile edlFile(edlFileName);
+   LLVM_DEBUG(dbgs() << "Writing EDL definitions to " << edlFileName << "\n");
+ 
+-  std::unordered_set<Function *> enclavedFuncs;
+-  for (auto *&origCall : callsToWrap) {
+-    Function *calledFunc = origCall->getCalledFunction();
+-    // TODO: Indirect calls
+-    if (calledFunc) {
+-      enclavedFuncs.insert(calledFunc);
+-      // Add postgate function to the module
+-      getPostgateImpl(origCall, edlFile);
+-    }
+-  }
+-
+-  for (auto func : enclavedFuncs) {
+-    insertSgxUsage(func);
++  for (auto enclavedFunc : funcsToWrap) {
++    // Add postgate function to the module
++    getPostgateImpl(enclavedFunc, edlFile);
++    insertSgxUsage(enclavedFunc);
+   }
+ 
+   return true;
+-- 
+2.25.1
+

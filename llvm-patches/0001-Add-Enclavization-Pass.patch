@@ -1,7 +1,7 @@
 From 524a8c60c04c166881065ceb0ea48a30d283f12e Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 23 Mar 2021 15:17:42 +0000
-Subject: [PATCH 01/16] Add Enclavization Pass
+Subject: [PATCH 01/18] Add Enclavization Pass
 
 Moved here from an out-of-tree pass, adjusted to an in-tree pass and
 edited to work with the legacy Pass Manager (because rucstc uses that
