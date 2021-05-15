@@ -1,0 +1,10 @@
+[package]
+name = "maxisign"
+version = "0.0.1"
+authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
+edition = "2018"
+
+[dependencies]
+base64 = "0.13.0"
+exitcode = "1.1.2"
+ring = "0.16.20"
