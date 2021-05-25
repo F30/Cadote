@@ -13,4 +13,4 @@ enclavization_lib = []
 
 [dependencies]
 cadote_trusted_runtime = { path = "../../support/cadote_trusted_runtime" }
-sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk.git", tag="v1.1.3", features = ["backtrace"] }
+sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk.git", rev="v1.1.3", features = ["backtrace"] }

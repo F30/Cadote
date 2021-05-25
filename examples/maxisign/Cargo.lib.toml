@@ -1,5 +1,5 @@
 [package]
-name = "password_check"
+name = "maxisign"
 version = "0.0.1"
 authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
 edition = "2018"
@@ -13,5 +13,8 @@ enclavization_lib = []
 
 [dependencies]
 cadote_trusted_runtime = { path = "../../support/cadote_trusted_runtime" }
+# We need to use `rev` instead of `tag` here to match exactly what "ring-sgx" is doing, otherwise we'll
+# end up with duplicate symbols because of https://github.com/rust-lang/cargo/issues/7497 and
+# https://github.com/rust-lang/cargo/issues/7670
 sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk.git", rev="v1.1.3", features = ["backtrace", "untrusted_fs"] }
-rustyline = "8.0.0"
+ring = { git = "https://github.com/mesalock-linux/ring-sgx.git", tag="sgx_1.1.3" }

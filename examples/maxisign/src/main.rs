@@ -1,15 +1,41 @@
+#![no_std]
+
+#[cfg(feature = "enclavization_lib")]
+#[macro_use]
+extern crate sgx_tstd as std;
+
+// For now, `macro_use` is required for std, see https://github.com/rust-lang/rust/issues/53977
+#[cfg(feature = "enclavization_bin")]
+#[macro_use]
+extern crate std;
+
+use std::prelude::v1::*;
+
+#[cfg(feature = "enclavization_lib")]
+extern crate cadote_trusted_runtime;
+
+#[cfg(feature = "enclavization_bin")]
+extern crate cadote_untrusted_runtime;
+
 use std::fs;
 use std::io::Read;
 use std::io::Write;
-use std::process;
 
-use base64;
-use exitcode;
 use ring::{
   rand,
   signature
 };
-use ring::signature::KeyPair;
+use ring::signature::{
+  KeyPair,
+  ED25519_PUBLIC_KEY_LEN
+};
+
+#[cfg(feature = "enclavization_bin")]
+use std::process;
+#[cfg(feature = "enclavization_bin")]
+use base64;
+#[cfg(feature = "enclavization_bin")]
+use exitcode;
 
 
 static PRIVATE_KEY_FILENAME: &str = "secret.key.p8";
@@ -35,6 +61,7 @@ impl From<std::io::Error> for Error {
 }
 
 
+#[cfg(feature = "enclavization_bin")]
 fn main() {
   let args: Vec<String> = std::env::args().collect();
   if args.len() < 2 {
@@ -42,7 +69,7 @@ fn main() {
   }
 
   if args[1] == "genkey" {
-    gen_key(PRIVATE_KEY_FILENAME, PUBLIC_KEY_FILENAME).expect("Key generation failed");
+    gen_key_enclaved_(PRIVATE_KEY_FILENAME, PUBLIC_KEY_FILENAME).expect("Key generation failed");
   } else if args[1] == "sign" {
     let signature = sign_stdin(PRIVATE_KEY_FILENAME).expect("Signing failed");
     println!("{}", base64::encode(signature.as_ref()));
@@ -62,26 +89,46 @@ fn main() {
   }
 }
 
+#[cfg(feature = "enclavization_bin")]
 fn exit_usage() {
   eprintln!("Usage: maxisign <genkey | sign | verify <sig-file>>");
   process::exit(exitcode::USAGE);
 }
 
-fn gen_key(privkey_filename: &str, pubkey_filename: &str) -> Result<(), Error> {
+fn gen_key_enclaved_(privkey_filename: &str, pubkey_filename: &str) -> Result<(), Error> {
   let rng = rand::SystemRandom::new();
   let key_doc = signature::Ed25519KeyPair::generate_pkcs8(&rng)?;
 
-  let mut private_key_file = fs::OpenOptions::new().create_new(true).write(true).open(privkey_filename)?;
+  // TODO: Would like to use create_new(), but that is unsupported when automatically converting to
+  // sgxfs::OpenOptions through Enclavization Pass
+  let mut private_key_file = fs::OpenOptions::new().create(true).write(true).open(privkey_filename)?;
   private_key_file.write_all(key_doc.as_ref())?;
 
   let key_pair = signature::Ed25519KeyPair::from_pkcs8(key_doc.as_ref()).unwrap();
-  let mut public_key_file = fs::OpenOptions::new().create_new(true).write(true).open(pubkey_filename)?;
-  public_key_file.write_all(key_pair.public_key().as_ref().as_ref())?;
+  let mut public_key_raw = get_untrusted_pubkey_mem();
+  (*public_key_raw).copy_from_slice(key_pair.public_key().as_ref());
+  store_public_key(public_key_raw, pubkey_filename)?;
 
   Ok(())
 }
 
-fn load_private_key(filename: &str) -> Result<signature::Ed25519KeyPair, Error> {
+/*
+ * Work-around for automatic enclavization, which demonstrates the limits of automatically inserting
+ * reverse calls: We cannot pass trusted memory from the enclave to store_public_key(). So we manually
+ * allocate untrusted memory and copy public key data there.
+ */
+fn get_untrusted_pubkey_mem() -> Box<[u8; ED25519_PUBLIC_KEY_LEN]> {
+  Box::new([0; ED25519_PUBLIC_KEY_LEN])
+}
+
+fn store_public_key(public_key: Box<[u8; ED25519_PUBLIC_KEY_LEN]>, filename: &str) -> Result<(), Error> {
+  let mut public_key_file = fs::OpenOptions::new().create_new(true).write(true).open(filename)?;
+  public_key_file.write_all(&*public_key)?;
+
+  Ok(())
+}
+
+fn load_private_key_enclaved_(filename: &str) -> Result<signature::Ed25519KeyPair, Error> {
   let mut key_file = fs::OpenOptions::new().read(true).open(filename)?;
   let mut key_bytes = Vec::new();
   key_file.read_to_end(&mut key_bytes)?;
@@ -103,11 +150,11 @@ fn sign_stdin(privkey_filename: &str) -> Result<signature::Signature, Error> {
   let mut message = Vec::new();
   std::io::stdin().read_to_end(&mut message)?;
 
-  sign_message(privkey_filename, &message)
+  sign_message_enclaved_(privkey_filename, &message)
 }
 
-fn sign_message(privkey_filename: &str, message: &[u8]) -> Result<signature::Signature, Error> {
-  let key_pair = load_private_key(privkey_filename)?;
+fn sign_message_enclaved_(privkey_filename: &str, message: &[u8]) -> Result<signature::Signature, Error> {
+  let key_pair = load_private_key_enclaved_(privkey_filename)?;
   let signature = key_pair.sign(message);
 
   Ok(signature)

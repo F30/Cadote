@@ -9,5 +9,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 sgx_trts = { git = "https://github.com/apache/teaclave-sgx-sdk.git", tag="v1.1.3" }
-sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk.git", tag="v1.1.3", features = ["backtrace"] }
+# We need to use `rev` instead of `tag` here because of the "maxisign" example, its dependency on "ring-sgx"
+# and Cargo bugs; see "examples/maxisign/Cargo.lib.toml" for details
+sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk.git", rev="v1.1.3", features = ["backtrace"] }
 sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk.git", tag="v1.1.3" }
