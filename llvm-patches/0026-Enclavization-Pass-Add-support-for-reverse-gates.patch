@@ -1,0 +1,468 @@
+From 5da59532824291e48306dd1e254af297e393cfbc Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 18 May 2021 18:00:41 +0000
+Subject: [PATCH 26/29] Enclavization Pass: Add support for reverse gates
+
+(i.e. untrusted functions, i.e. OCALLs)
+---
+ .../Transforms/Utils/Enclavization/Wrappers.h |  10 +
+ .../Utils/Enclavization/Wrappers.cpp          | 263 +++++++++++++++++-
+ .../Transforms/Utils/EnclavizationBinPass.cpp |  34 ++-
+ .../Transforms/Utils/EnclavizationLibPass.cpp |  39 ++-
+ 4 files changed, 332 insertions(+), 14 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
+index c07712a5d05d..09cd0614f3ef 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
+@@ -16,5 +16,15 @@ llvm::Function *getPostgateProxyDecl(llvm::Function *);
+ 
+ llvm::Function *getPostgateImpl(llvm::Function *, EdlFile &);
+ 
++llvm::Function *getRevPregateDecl(llvm::Function *);
++
++llvm::Function *getRevPregateImpl(llvm::Function *, EdlFile &);
++
++llvm::Function *getRevPostgateRealDecl(llvm::Function *);
++
++llvm::Function *getRevPostgateProxyDecl(llvm::Function *);
++
++llvm::Function *getRevPostgateImpl(llvm::Function *);
++
+ 
+ #endif
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index 6eaab0077c7c..557b948e0672 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -24,6 +24,8 @@ using namespace llvm;
+ 
+ #define PRE_GATE_PREFIX "_enclave_pregate_"
+ #define POST_GATE_PREFIX "_enclave_postgate_"
++#define REV_PRE_GATE_PREFIX "_reverse_pregate_"
++#define REV_POST_GATE_PREFIX "_reverse_postgate_"
+ 
+ #define SGX_SUCCESS 0
+ // LLVM type for `sgx_status_t`
+@@ -31,6 +33,8 @@ using namespace llvm;
+ 
+ static bool createdPostageRealDecl = false;
+ static bool createdPostageProxyDecl = false;
++static bool createdRevPostageRealDecl = false;
++static bool createdRevPostageProxyDecl = false;
+ 
+ 
+ #define MEMCPY_FUNC "llvm.memcpy.p0i8.p0i8.i64"
+@@ -77,10 +81,26 @@ static std::string getPregateName(Function *func) {
+ 
+ 
+ static std::string getPostgateName(Function *func) {
+-  std::stringstream entranceName;
+-  entranceName << POST_GATE_PREFIX << rustNameWithoutHash(func->getName().str());
++  std::stringstream gateName;
++  gateName << POST_GATE_PREFIX << rustNameWithoutHash(func->getName().str());
+ 
+-  return entranceName.str();
++  return gateName.str();
++}
++
++
++static std::string getRevPregateName(Function *func) {
++  std::stringstream gateName;
++  gateName << REV_PRE_GATE_PREFIX << rustNameWithoutHash(func->getName().str());
++
++  return gateName.str();
++}
++
++
++static std::string getRevPostgateName(Function *func) {
++  std::stringstream gateName;
++  gateName << REV_POST_GATE_PREFIX << rustNameWithoutHash(func->getName().str());
++
++  return gateName.str();
+ }
+ 
+ 
+@@ -528,3 +548,240 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+ 
+   return postgateFunc;
+ }
++
++
++Function *getRevPregateDecl(Function *wrappedFunc) {
++  Module *mod = wrappedFunc->getParent();
++
++  std::string gateName = getRevPregateName(wrappedFunc);
++  Function *gateFunc = mod->getFunction(gateName);
++  if (gateFunc) {
++    return gateFunc;
++  }
++
++  gateFunc = Function::Create(wrappedFunc->getFunctionType(), Function::InternalLinkage, gateName, mod);
++  adoptAttrs(wrappedFunc, gateFunc);
++
++  return gateFunc;
++}
++
++
++Function *getRevPregateImpl(Function *wrappedFunc, EdlFile &edlFile) {
++  Module *mod = wrappedFunc->getParent();
++
++  Function *revPostgateDecl = getRevPostgateProxyDecl(wrappedFunc);
++  Function *revPregateFunc = getRevPregateDecl(wrappedFunc);
++  // Check if function has any BasicBlocks
++  if (!revPregateFunc->empty()) {
++    // Implementation has already been created in a previous call
++    return revPregateFunc;
++  }
++
++  edlFile.addUntrustedFunction(revPostgateDecl);
++
++  BasicBlock *callRevPostgateBlock = BasicBlock::Create(
++    mod->getContext(),
++    "call_reverse_postgate",
++    revPregateFunc,
++    nullptr
++  );
++
++  AllocaInst *revPostgateReturnAlloc = nullptr;
++  if (wrappedFunc->getReturnType() != Type::getVoidTy(mod->getContext())) {
++    // Proxy functions write the return value to a passed pointer
++    revPostgateReturnAlloc = new AllocaInst(wrappedFunc->getReturnType(), 0, "", callRevPostgateBlock);
++  }
++
++  std::vector<Value *> revPostgateArgs;
++  if (revPostgateReturnAlloc) {
++    // Proxy function param "retval"
++    revPostgateArgs.push_back(revPostgateReturnAlloc);
++  }
++  for (auto arg = revPregateFunc->arg_begin(); arg != revPregateFunc->arg_end(); ++arg) {
++    revPostgateArgs.push_back(arg);
++  }
++
++  CallInst *revPostgateCall = CallInst::Create(
++    revPostgateDecl,
++    revPostgateArgs,
++    "",
++    callRevPostgateBlock
++  );
++
++  // Check call result
++  ICmpInst *statusCheck = new ICmpInst(
++    *callRevPostgateBlock,
++    ICmpInst::ICMP_NE,
++    revPostgateCall,
++    ConstantInt::get(SGX_STATUS_TYPE(mod->getContext()), SGX_SUCCESS),
++    ""
++  );
++  BasicBlock *errorHandlingBlock = BasicBlock::Create(
++    mod->getContext(),
++    "error_handling",
++    revPregateFunc,
++    nullptr
++  );
++  BasicBlock *successReturnBlock = BasicBlock::Create(
++    mod->getContext(),
++    "success_return",
++    revPregateFunc,
++    nullptr
++  );
++  BranchInst::Create(
++    errorHandlingBlock,
++    successReturnBlock,
++    statusCheck,
++    callRevPostgateBlock
++  );
++
++  Function *errorHandlerDecl = getErrorHandlerDecl(mod);
++  CallInst::Create(
++    errorHandlerDecl,
++    "",
++    errorHandlingBlock
++  );
++  new UnreachableInst(mod->getContext(), errorHandlingBlock);
++
++  LoadInst *revPostgateReturnVal = nullptr;
++  if (revPostgateReturnAlloc) {
++    revPostgateReturnVal = new LoadInst(
++      wrappedFunc->getReturnType(),
++      revPostgateReturnAlloc,
++      "",
++      successReturnBlock
++    );
++  }
++
++  if (revPostgateReturnVal) {
++    ReturnInst::Create(
++      mod->getContext(),
++      revPostgateReturnVal,
++      successReturnBlock
++    );
++  } else {
++    ReturnInst::Create(
++      mod->getContext(),
++      successReturnBlock
++    );
++  }
++
++  return revPregateFunc;
++}
++
++
++Function *getRevPostgateRealDecl(Function *wrappedFunc) {
++  assert(!createdRevPostageProxyDecl && "Can only declare either real or proxy reverse postgate");
++  Module *mod = wrappedFunc->getParent();
++
++  std::string gateName = getRevPostgateName(wrappedFunc);
++  Function *gateFunc = mod->getFunction(gateName);
++  if (gateFunc) {
++    return gateFunc;
++  }
++
++  FunctionType *gateType = wrappedFunc->getFunctionType();
++  gateFunc = Function::Create(gateType, Function::ExternalLinkage, gateName, mod);
++  gateFunc->setVisibility(Function::DefaultVisibility);
++  createdPostageRealDecl = true;
++  adoptAttrs(wrappedFunc, gateFunc);
++
++  return gateFunc;
++}
++
++
++Function *getRevPostgateProxyDecl(Function *wrappedFunc) {
++  assert(!createdRevPostageRealDecl && "Can only declare either real or proxy reverse postgate");
++  Module *mod = wrappedFunc->getParent();
++
++  std::string gateName = getRevPostgateName(wrappedFunc);
++  Function *gateFunc = mod->getFunction(gateName);
++  if (gateFunc) {
++    return gateFunc;
++  }
++
++  Type *gateReturnType = SGX_STATUS_TYPE(mod->getContext());
++  FunctionType *wrappedType = wrappedFunc->getFunctionType();
++
++  std::vector<Type *> gateArgTypes;
++  // Offset between wrapped and original parameters
++  unsigned int argOffset = 0;
++  if (wrappedType->getReturnType() != Type::getVoidTy(mod->getContext())) {
++    // Proxy function param "retval"
++    gateArgTypes.push_back(wrappedType->getReturnType()->getPointerTo());
++    ++argOffset;
++  }
++  for (auto argType = wrappedType->param_begin(); argType != wrappedType->param_end(); ++argType) {
++    gateArgTypes.push_back(*argType);
++  }
++
++  FunctionType *gateType = FunctionType::get(gateReturnType, gateArgTypes, false);
++  gateFunc = Function::Create(gateType, Function::ExternalLinkage, gateName, mod);
++  createdRevPostageProxyDecl = true;
++
++  // Would like to add an `sret` attr for the return pointer arg, but that is only allowed for functions
++  // with void return type
++  for (size_t i = 0; i < wrappedFunc->arg_size(); ++i) {
++    // Only adopt `dereferencable` attrs, not sure if other ones would be valid for enclave proxies
++    if (wrappedFunc->hasParamAttribute(i, Attribute::AttrKind::Dereferenceable)) {
++      uint64_t attrVal = wrappedFunc->getParamDereferenceableBytes(i);
++      Attribute attr = Attribute::get(mod->getContext(), Attribute::AttrKind::Dereferenceable, attrVal);
++      gateFunc->addParamAttr(argOffset + i, attr);
++    }
++  }
++  if (wrappedType->getReturnType() != Type::getVoidTy(mod->getContext())) {
++    if (wrappedFunc->hasAttribute(AttributeList::ReturnIndex, Attribute::AttrKind::Dereferenceable)) {
++      uint64_t attrVal = wrappedFunc->getParamDereferenceableBytes(AttributeList::ReturnIndex);
++      Attribute attr = Attribute::get(mod->getContext(), Attribute::AttrKind::Dereferenceable, attrVal);
++      gateFunc->addParamAttr(1, attr);
++    }
++  }
++
++  return gateFunc;
++}
++
++
++Function *getRevPostgateImpl(Function *wrappedFunc) {
++  Module *mod = wrappedFunc->getParent();
++
++  Function *revPostgateFunc = getRevPostgateRealDecl(wrappedFunc);
++  // Check if function has any BasicBlocks
++  if (!revPostgateFunc->empty()) {
++    // Implementation has already been created in a previous call
++    return revPostgateFunc;
++  }
++
++  BasicBlock *revPostgateBlock = BasicBlock::Create(
++    mod->getContext(),
++    "reverse_postgate",
++    revPostgateFunc,
++    nullptr
++  );
++
++  std::vector<Value *> wrappedArgs;
++  for (auto arg = revPostgateFunc->arg_begin(); arg != revPostgateFunc->arg_end(); ++arg) {
++    wrappedArgs.push_back(arg);
++  }
++  CallInst *wrappedCall = CallInst::Create(
++    wrappedFunc,
++    wrappedArgs,
++    "",
++    revPostgateBlock
++  );
++
++  if (wrappedFunc->getReturnType() == Type::getVoidTy(mod->getContext())) {
++    ReturnInst::Create(
++      mod->getContext(),
++      revPostgateBlock
++    );
++  } else {
++    // Pass result from original function
++    ReturnInst::Create(
++      mod->getContext(),
++      wrappedCall,
++      revPostgateBlock
++    );
++  }
++
++  return revPostgateFunc;
++}
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
+index 87a5b2536b2e..13b535ec2fad 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
+@@ -1,3 +1,5 @@
++#include <assert.h>
++#include <cstdlib>
+ #include <string>
+ #include <unordered_set>
+ 
+@@ -37,9 +39,12 @@ bool EnclavizationBin::runOnModule(Module &mod) {
+     mainFunc->getEntryBlock().getFirstNonPHI()
+   );
+ 
+-  // First, generate list of calls to be wrapped in order to not change a Module, Function or BasicBlock
+-  // while iterating over it
+-  std::unordered_set<CallBase *> callsToWrap;
++  char *mainCrateNamePtr = getenv("MAIN_CRATE_NAME");
++  assert(mainCrateNamePtr && "Env variable MAIN_CRATE_NAME is unset");
++  std::string mainCrateName(mainCrateNamePtr);
++
++  std::unordered_set<CallBase *> enclaveCalls;
++  std::unordered_set<CallBase *> reverseEnclaveCalls;
+ 
+   for (auto &func : mod) {
+     if (func.isDeclaration()) {
+@@ -56,29 +61,40 @@ bool EnclavizationBin::runOnModule(Module &mod) {
+ 
+         // TODO: Indirect calls
+         if (callee) {
+-          if (isEnclavedFunc(callee)) {
+-            callsToWrap.insert(origCall);
++          if (!isEnclavedFunc(&func) && isEnclavedFunc(callee)) {
++            enclaveCalls.insert(origCall);
++          } else if (isEnclavedFunc(&func) && !isEnclavedFunc(callee)) {
++            if (strStartsWith(demangleRustName(callee->getName()), mainCrateName + "::")) {
++              reverseEnclaveCalls.insert(origCall);
++            }
+           }
+         }
+       }
+     }
+   }
+ 
+-  if (callsToWrap.empty()) {
++  dbgs() << "Enclavization: Found " << enclaveCalls.size() << " enclave calls and "
++         << reverseEnclaveCalls.size() << " reverse calls\n";
++  if (enclaveCalls.empty()) {
+     return false;
+   }
+-  dbgs() << "Enclavization: Found " << callsToWrap.size() << " calls to wrap\n";
+ 
+   std::unordered_set<Function *> replacedFuncs;
+ 
+-  for (auto origCall : callsToWrap) {
++  for (auto origCall : enclaveCalls) {
+     Function *callee = origCall->getCalledFunction();
+     FunctionCallee pregateFunc = getPregateImpl(callee);
+     origCall->setCalledFunction(pregateFunc);
+     replacedFuncs.insert(callee);
+   }
+ 
+-  // Delete original functions after replacing all calls in the previous loop
++  for (auto origCall : reverseEnclaveCalls) {
++    Function *callee = origCall->getCalledFunction();
++    // Add reverse postgate function to the module
++    getRevPostgateImpl(callee);
++  }
++
++  // Delete original functions after replacing all calls in the loop above
+   for (auto *func : replacedFuncs) {
+     func->eraseFromParent();
+   }
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index a1fa771644fd..e60263a3b601 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -1,3 +1,5 @@
++#include <assert.h>
++#include <cstdlib>
+ #include <string>
+ #include <unordered_set>
+ 
+@@ -23,9 +25,14 @@ using namespace llvm;
+ 
+ 
+ bool EnclavizationLib::runOnModule(Module &mod) {
+-  // First, generate list of functions to be wrapped or removed, in order to not change a Module while
+-  // iterating over it
++  char *mainCrateNamePtr = getenv("MAIN_CRATE_NAME");
++  assert(mainCrateNamePtr && "Env variable MAIN_CRATE_NAME is unset");
++  std::string mainCrateName(mainCrateNamePtr);
++
++  // First, generate lists of functions/calls to be wrapped, in order to not change a Module while iterating
++  // over it
+   std::unordered_set<Function *> funcsToWrap;
++  std::unordered_set<CallBase *> reverseCalls;
+ 
+   for (auto &func : mod) {
+     if (func.isDeclaration()) {
+@@ -43,10 +50,38 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+   EdlFile edlFile(edlFileName);
+   dbgs() << "Enclavization: Writing EDL definitions to " << edlFileName << "\n";
+ 
++  if (funcsToWrap.empty()) {
++    return false;
++  }
++
+   for (auto enclavedFunc : funcsToWrap) {
+     // Add postgate function to the module
+     getPostgateImpl(enclavedFunc, edlFile);
+     insertSgxUsage(enclavedFunc);
++
++    // Analysze all calls by the enclaved function to find calls to un-enclaved functions
++    for (auto &bblock : *enclavedFunc) {
++      for (auto &inst : bblock) {
++        if (!isa<CallBase>(&inst)) {
++          continue;
++        }
++        auto origCall = dyn_cast<CallBase>(&inst);
++        Function *callee = origCall->getCalledFunction();
++
++        // TODO: Indirect calls
++        if (callee) {
++          if (!isEnclavedFunc(callee) && strStartsWith(demangleRustName(callee->getName()), mainCrateName + "::")) {
++            reverseCalls.insert(origCall);
++          }
++        }
++      }
++    }
++  }
++
++  for (auto origCall : reverseCalls) {
++    Function *callee = origCall->getCalledFunction();
++    FunctionCallee revPregateFunc = getRevPregateImpl(callee, edlFile);
++    origCall->setCalledFunction(revPregateFunc);
+   }
+ 
+   return true;
+-- 
+2.25.1
+

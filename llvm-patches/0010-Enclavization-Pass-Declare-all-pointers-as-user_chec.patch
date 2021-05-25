@@ -1,7 +1,7 @@
 From cb6dd29b839d581b4f3cb7efba1202aab3dd73c2 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 20 Apr 2021 11:38:34 +0000
-Subject: [PATCH 10/18] Enclavization Pass: Declare all pointers as
+Subject: [PATCH 10/29] Enclavization Pass: Declare all pointers as
  `user_check` in EDL file
 
 Letting the Intel bridges handle just one layer of pointers (but no deep

@@ -1,0 +1,34 @@
+From 3cda9875737491481846dbeb2454c9456d3725d9 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Mon, 17 May 2021 11:19:15 +0000
+Subject: [PATCH 19/29] Fix copy/paste oversights
+
+---
+ llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index c8c0579a4a0c..bb614391b279 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -362,7 +362,7 @@ void FsCallConverter::convertOpenoptionsCreate(CallBase *origCall) {
+   openoptionsConversions[origCall] = openoptionsConversions[oldArg0];
+ 
+   convertedInstrs.push_back(origCall);
+-  dbgs() << "Enclave modification: Converted (obsolete) call to OpenOptions::read()\n";
++  dbgs() << "Enclave modification: Converted (obsolete) call to OpenOptions::create()\n";
+ }
+ 
+ void FsCallConverter::convertOpenoptionsRead(CallBase *origCall) {
+@@ -716,7 +716,7 @@ void FsCallConverter::converFileWriteall(CallBase *origCall) {
+   Module *mod = origCall->getModule();
+ 
+   Value *oldArg0 = origCall->getArgOperand(0);
+-  assert(fileConversions.count(oldArg0) == 1 && "Missing converted OpenOptions from previous step");
++  assert(fileConversions.count(oldArg0) == 1 && "Missing converted File from previous step");
+   Value *newArg0 = fileConversions[oldArg0];
+   Value *newArgs[] = { newArg0, origCall->getArgOperand(1), origCall->getArgOperand(2) };
+ 
+-- 
+2.25.1
+

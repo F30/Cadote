@@ -1,7 +1,7 @@
 From 3875450a11b0a54061b35e75ea6b404ee52e5169 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Thu, 13 May 2021 13:07:18 +0000
-Subject: [PATCH 17/18] Enclavization Pass: Refactor main pass files
+Subject: [PATCH 17/29] Enclavization Pass: Refactor main pass files
 
 The main change is that EnclavizationLibPass will generate its list of
 functions to wrap directly from a module's functions, not through calls.

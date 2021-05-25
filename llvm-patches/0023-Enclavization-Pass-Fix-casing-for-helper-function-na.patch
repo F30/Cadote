@@ -1,0 +1,39 @@
+From d954ce2237e81687fdb484a1474c7356df8d1488 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 18 May 2021 10:40:37 +0000
+Subject: [PATCH 23/29] Enclavization Pass: Fix casing for helper function name
+
+---
+ llvm/include/llvm/Transforms/Utils/Enclavization/Support.h | 2 +-
+ llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
+index 81d942ec7c1d..04a2a926850d 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Support.h
+@@ -20,7 +20,7 @@ inline bool isMangledRustName(llvm::StringRef name) {
+   return name.startswith("_ZN") || name.startswith("_R");
+ }
+ 
+-inline bool strStartswith(const std::string &str, const std::string &prefix) {
++inline bool strStartsWith(const std::string &str, const std::string &prefix) {
+   return str.rfind(prefix, 0) == 0;
+ }
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index 325d6e334ffb..ef2af0ac0a5a 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -374,7 +374,7 @@ void FsCallConverter::convertOpenoptionsNew(CallBase *origCall) {
+         assert(isa<CallInst>(castUser) && "Result of bitcast instruction has unexpected usage");
+         CallInst *memcpyCall = dyn_cast<CallInst>(castUser);
+         assert(memcpyCall->getCalledFunction() &&
+-               strStartswith(std::string(memcpyCall->getCalledFunction()->getName()), "llvm.memcpy.") &&
++               strStartsWith(std::string(memcpyCall->getCalledFunction()->getName()), "llvm.memcpy.") &&
+                "Result of bitcast instruction used in unexpected call");
+ 
+         Value *memcpyDest = memcpyCall->getArgOperand(0);
+-- 
+2.25.1
+

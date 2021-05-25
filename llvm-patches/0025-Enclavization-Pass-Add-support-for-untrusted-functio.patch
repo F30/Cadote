@@ -1,0 +1,105 @@
+From cc9581f8e19bc4ad7a27a94de67af31cb1861f24 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 18 May 2021 17:58:48 +0000
+Subject: [PATCH 25/29] Enclavization Pass: Add support for untrusted functions
+ to EDL file export
+
+---
+ .../Transforms/Utils/Enclavization/Export.h   |  4 ++-
+ .../Transforms/Utils/Enclavization/Export.cpp | 28 ++++++++++++++-----
+ 2 files changed, 24 insertions(+), 8 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+index 102292b4447d..1c9e92316dfc 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+@@ -21,16 +21,18 @@ class EdlFile {
+     std::string addStruct(llvm::StructType *);
+     std::string addWideInt(unsigned int);
+     void addTrustedFunction(llvm::Function *);
++    void addUntrustedFunction(llvm::Function *);
+ 
+   private:
+     void writeFile();
++    void addFunction(llvm::Function *, std::vector<std::string> &);
+     std::string getEdlType(llvm::Type *, llvm::LLVMContext &);
+-    std::vector<std::string> getEdlAttributes(llvm::Argument *);
+ 
+     std::string filePath;
+     std::vector<std::string> structs;
+     std::unordered_set<unsigned int> wideInts;
+     std::vector<std::string> trustedFuncs;
++    std::vector<std::string> untrustedFuncs;
+ };
+ 
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index 330fa514fb36..0b103e65b02e 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -49,6 +49,13 @@ void EdlFile::writeFile() {
+ 
+   fstream << "trusted {\n";
+   for (auto entry : trustedFuncs) {
++    fstream << "public ";
++    fstream << entry;
++  }
++  fstream << "};\n";
++
++  fstream << "untrusted {\n";
++  for (auto entry : untrustedFuncs) {
+     fstream << entry;
+   }
+   fstream << "};\n";
+@@ -106,20 +113,27 @@ std::string EdlFile::addWideInt(unsigned int width) {
+ }
+ 
+ void EdlFile::addTrustedFunction(Function *postgateFunc) {
++  addFunction(postgateFunc, trustedFuncs);
++}
++
++void EdlFile::addUntrustedFunction(Function *func) {
++  addFunction(func, untrustedFuncs);
++}
++
++void EdlFile::addFunction(llvm::Function *func, std::vector<std::string> &target) {
+   std::string funcEntry;
+   raw_string_ostream entryStream(funcEntry);
+ 
+-  entryStream << "public ";
+   // Return type
+-  entryStream << getEdlType(postgateFunc->getReturnType(), postgateFunc->getContext());
+-  entryStream << " " << postgateFunc->getName().str() << "(";
++  entryStream << getEdlType(func->getReturnType(), func->getContext());
++  entryStream << " " << func->getName().str() << "(";
+ 
+-  for (size_t i = 0; i < postgateFunc->arg_size(); ++i) {
++  for (size_t i = 0; i < func->arg_size(); ++i) {
+     if (i != 0) {
+       entryStream << ", ";
+     }
+ 
+-    auto arg = postgateFunc->getArg(i);
++    auto arg = func->getArg(i);
+     auto argType = arg->getType();
+ 
+     if (argType->isPointerTy()) {
+@@ -128,13 +142,13 @@ void EdlFile::addTrustedFunction(Function *postgateFunc) {
+       entryStream << "[user_check] ";
+     }
+ 
+-    auto edlType = getEdlType(argType, postgateFunc->getContext());
++    auto edlType = getEdlType(argType, func->getContext());
+     entryStream << edlType << " arg" << i;
+   }
+ 
+   entryStream << ");\n";
+ 
+-  trustedFuncs.push_back(funcEntry);
++  target.push_back(funcEntry);
+ }
+ 
+ std::string EdlFile::getEdlType(Type *llvmType, LLVMContext &context) {
+-- 
+2.25.1
+

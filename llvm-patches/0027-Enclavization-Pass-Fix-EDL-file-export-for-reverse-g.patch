@@ -1,0 +1,119 @@
+From 9dec692c3390434d376bf839e2e6d6e32f3f2af0 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 19 May 2021 14:31:12 +0000
+Subject: [PATCH 27/29] Enclavization Pass: Fix EDL file export for reverse
+ gates
+
+---
+ .../Transforms/Utils/Enclavization/Wrappers.h |  4 +++-
+ .../Utils/Enclavization/Wrappers.cpp          | 24 +++++++++++++++----
+ .../Transforms/Utils/EnclavizationLibPass.cpp | 13 ++++++++--
+ 3 files changed, 34 insertions(+), 7 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
+index 09cd0614f3ef..70e649882598 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Wrappers.h
+@@ -18,10 +18,12 @@ llvm::Function *getPostgateImpl(llvm::Function *, EdlFile &);
+ 
+ llvm::Function *getRevPregateDecl(llvm::Function *);
+ 
+-llvm::Function *getRevPregateImpl(llvm::Function *, EdlFile &);
++llvm::Function *getRevPregateImpl(llvm::Function *);
+ 
+ llvm::Function *getRevPostgateRealDecl(llvm::Function *);
+ 
++void deleteRevPostgateRealDecl(llvm::Function *);
++
+ llvm::Function *getRevPostgateProxyDecl(llvm::Function *);
+ 
+ llvm::Function *getRevPostgateImpl(llvm::Function *);
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index 557b948e0672..e49366ad4315 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -566,7 +566,7 @@ Function *getRevPregateDecl(Function *wrappedFunc) {
+ }
+ 
+ 
+-Function *getRevPregateImpl(Function *wrappedFunc, EdlFile &edlFile) {
++Function *getRevPregateImpl(Function *wrappedFunc) {
+   Module *mod = wrappedFunc->getParent();
+ 
+   Function *revPostgateDecl = getRevPostgateProxyDecl(wrappedFunc);
+@@ -577,8 +577,6 @@ Function *getRevPregateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+     return revPregateFunc;
+   }
+ 
+-  edlFile.addUntrustedFunction(revPostgateDecl);
+-
+   BasicBlock *callRevPostgateBlock = BasicBlock::Create(
+     mod->getContext(),
+     "call_reverse_postgate",
+@@ -683,13 +681,31 @@ Function *getRevPostgateRealDecl(Function *wrappedFunc) {
+   FunctionType *gateType = wrappedFunc->getFunctionType();
+   gateFunc = Function::Create(gateType, Function::ExternalLinkage, gateName, mod);
+   gateFunc->setVisibility(Function::DefaultVisibility);
+-  createdPostageRealDecl = true;
++  createdRevPostageRealDecl = true;
+   adoptAttrs(wrappedFunc, gateFunc);
+ 
+   return gateFunc;
+ }
+ 
+ 
++/*
++ * Hack to account for the fact that we need both the real and the proxy declaration (under the same name) in
++ * EnclavizationLibPass. Therefore, we allow to temporarily create the real declaration, remove it again
++ * and then create the proxy declaration.
++ */
++void deleteRevPostgateRealDecl(Function *wrappedFunc) {
++  assert(createdRevPostageRealDecl && "Can only remove real reverse postgate after it has been declared");
++
++  Module *mod = wrappedFunc->getParent();
++  std::string gateName = getRevPostgateName(wrappedFunc);
++  Function *gateFunc = mod->getFunction(gateName);
++  assert(gateFunc && "Reverse postgate declaration not found, this should never happen");
++
++  gateFunc->eraseFromParent();
++  createdRevPostageRealDecl = false;
++}
++
++
+ Function *getRevPostgateProxyDecl(Function *wrappedFunc) {
+   assert(!createdRevPostageRealDecl && "Can only declare either real or proxy reverse postgate");
+   Module *mod = wrappedFunc->getParent();
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index e60263a3b601..7dd75164ecc7 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -59,7 +59,7 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+     getPostgateImpl(enclavedFunc, edlFile);
+     insertSgxUsage(enclavedFunc);
+ 
+-    // Analysze all calls by the enclaved function to find calls to un-enclaved functions
++    // Analyze all calls by the enclaved function to find calls to un-enclaved functions
+     for (auto &bblock : *enclavedFunc) {
+       for (auto &inst : bblock) {
+         if (!isa<CallBase>(&inst)) {
+@@ -80,7 +80,16 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+ 
+   for (auto origCall : reverseCalls) {
+     Function *callee = origCall->getCalledFunction();
+-    FunctionCallee revPregateFunc = getRevPregateImpl(callee, edlFile);
++    // This is a bit ugly, but we can only add either to real or the proxy declaration and we really need
++    // both
++    Function *revPostgateRealDecl = getRevPostgateRealDecl(callee);
++    edlFile.addUntrustedFunction(revPostgateRealDecl);
++    deleteRevPostgateRealDecl(callee);
++  }
++
++  for (auto origCall : reverseCalls) {
++    Function *callee = origCall->getCalledFunction();
++    FunctionCallee revPregateFunc = getRevPregateImpl(callee);
+     origCall->setCalledFunction(revPregateFunc);
+   }
+ 
+-- 
+2.25.1
+

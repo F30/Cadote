@@ -1,0 +1,210 @@
+From 801d2f4b51e0dad27d8f2febfae4a8b6e9a5fdd2 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Mon, 17 May 2021 15:41:17 +0000
+Subject: [PATCH 21/29] Enclavization Pass: Insert SGX usage for
+ OpenOptions::write() and Read::read_to_end()
+
+---
+ .../Utils/Enclavization/EnclaveModify.h       |   2 +
+ .../Utils/Enclavization/EnclaveModify.cpp     | 111 +++++++++++++++++-
+ 2 files changed, 110 insertions(+), 3 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+index 7e18357ff07b..78e7f8907b44 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+@@ -16,10 +16,12 @@ class FsCallConverter {
+     void convertOpenoptionsNew(llvm::CallBase *);
+     void convertOpenoptionsCreate(llvm::CallBase *);
+     void convertOpenoptionsRead(llvm::CallBase *);
++    void convertOpenoptionsWrite(llvm::CallBase *);
+     void convertOpenoptionsAppend(llvm::CallBase *);
+     void convertOpenoptionsOpen(llvm::CallBase *);
+     void convertBufreaderNew(llvm::CallBase *);
+     void convertBufreaderReadline(llvm::CallBase *);
++    void convertFileReadtoend(llvm::CallBase *);
+     void converFileWriteall(llvm::CallBase *);
+     void convertFileDrops();
+     void convertBufreaderDrops();
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index bb614391b279..325d6e334ffb 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -134,6 +134,23 @@ static Function *getSgxfsOpenoptionsReadDecl(Module *mod) {
+ }
+ 
+ 
++#define MANGLED_SGXFS_OPENOPTIONS_WRITE_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions5write17h5b10a1808d5f12e5E"
++
++static Function *getSgxfsOpenoptionsWriteDecl(Module *mod) {
++  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_WRITE_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *openOptionsPtrType = getSgxfsOpenoptionsType(mod)->getPointerTo();
++  Type *argTypes[] = { openOptionsPtrType, Type::getInt1Ty(mod->getContext()) };
++  FunctionType *funcType = FunctionType::get(openOptionsPtrType, argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_WRITE_NAME, mod);
++
++  return func;
++}
++
++
+ #define MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions6append17h14079cb0dd2caf72E"
+ 
+ static Function *getSgxfsOpenoptionsAppendDecl(Module *mod) {
+@@ -214,6 +231,27 @@ static Function *getCadoteBufreaderReadlineDecl(Module *mod, Type *resultType, T
+ }
+ 
+ 
++#define CADOTE_SGXFILE_READTOEND_NAME "cadote_sgxfs_sgxfile_readtoend"
++
++static Function *getCadoteSgxfileReadtoendDecl(Module *mod, Type *usizeResultType, Type *vecU8Type) {
++  Function *func = mod->getFunction(CADOTE_SGXFILE_READTOEND_NAME);
++  if (func) {
++    return func;
++  }
++
++  Type *argTypes[] = {
++    // Return pointer (`sret`-style)
++    usizeResultType->getPointerTo(),
++    Type::getInt8Ty(mod->getContext())->getPointerTo()->getPointerTo(),
++    vecU8Type->getPointerTo()
++  };
++  FunctionType *funcType = FunctionType::get(Type::getVoidTy(mod->getContext()), argTypes, false);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_SGXFILE_READTOEND_NAME, mod);
++
++  return func;
++}
++
++
+ #define MANGLED_IO_WRITE_WRITEALL_NAME "_ZN8sgx_tstd2io5Write9write_all17h3e2682f553f4eb0fE"
+ 
+ static Function *getFileWriteallDecl(Module *mod) {
+@@ -386,6 +424,27 @@ void FsCallConverter::convertOpenoptionsRead(CallBase *origCall) {
+   dbgs() << "Enclave modification: Converted call to OpenOptions::read()\n";
+ }
+ 
++void FsCallConverter::convertOpenoptionsWrite(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  Value *oldArg0 = origCall->getArgOperand(0);
++  assert(openoptionsConversions.count(oldArg0) == 1 && "Missing converted OpenOptions from previous step");
++  Value *newArg0 = openoptionsConversions[oldArg0];
++  Value *newArgs[] = { newArg0, origCall->getArgOperand(1) };
++
++  CallInst *newCall = CallInst::Create(
++    getSgxfsOpenoptionsWriteDecl(mod),
++    newArgs,
++    "",
++    origCall
++  );
++
++  assert(isa<CallInst>(origCall) && "Call to OpenOptions::write() has unexpected sub-type");
++  convertedInstrs.push_back(origCall);
++  openoptionsConversions[origCall] = newCall;
++  dbgs() << "Enclave modification: Converted call to OpenOptions::write()\n";
++}
++
+ void FsCallConverter::convertOpenoptionsAppend(CallBase *origCall) {
+   Module *mod = origCall->getModule();
+ 
+@@ -712,6 +771,38 @@ void FsCallConverter::convertBufreaderReadline(CallBase *origCall) {
+   dbgs() << "Enclave modification: Converted call to BufReader::read_line()\n";
+ }
+ 
++void FsCallConverter::convertFileReadtoend(CallBase *origCall) {
++  Module *mod = origCall->getModule();
++
++  Function *oldCallee = origCall->getCalledFunction();
++  assert(oldCallee && "Could not get called function, this should never happen");
++  Type *usizeResultType = oldCallee->getArg(0)->getType()->getPointerElementType();
++  assert(usizeResultType->isStructTy() && "File::read_to_end() has unexpected parameter type");
++  Type *vecU8Type = oldCallee->getArg(2)->getType()->getPointerElementType();
++  assert(vecU8Type->isStructTy() && "File::read_to_end() has unexpected parameter type");
++
++  Value *oldArg1 = origCall->getArgOperand(1);
++  assert(fileConversions.count(oldArg1) == 1 && "Missing converted File from previous step");
++  Value *newArg1 = fileConversions[oldArg1];
++  Value *newArgs[] = { origCall->getArgOperand(0), newArg1, origCall->getArgOperand(2) };
++
++  assert(isa<InvokeInst>(origCall) && "Call to File::read_to_end() has unexpected sub-type");
++  InvokeInst *oldInvoke = dyn_cast<InvokeInst>(origCall);
++
++  InvokeInst *newInvoke = InvokeInst::Create(
++    getCadoteSgxfileReadtoendDecl(mod, usizeResultType, vecU8Type),
++    oldInvoke->getNormalDest(),
++    oldInvoke->getUnwindDest(),
++    newArgs,
++    "",
++    origCall
++  );
++  oldInvoke->replaceAllUsesWith(newInvoke);
++  convertedInstrs.push_back(origCall);
++
++  dbgs() << "Enclave modification: Converted call to File::read_to_end()\n";
++}
++
+ void FsCallConverter::converFileWriteall(CallBase *origCall) {
+   Module *mod = origCall->getModule();
+ 
+@@ -763,7 +854,9 @@ void FsCallConverter::convertFileDrops() {
+     }
+   }
+ 
+-  dbgs() << "Enclave modification: Converted drop_in_place() calls for File\n";
++  if (!fileConversions.empty()) {
++    dbgs() << "Enclave modification: Converted drop_in_place() calls for File\n";
++  }
+ }
+ 
+ void FsCallConverter::convertBufreaderDrops() {
+@@ -806,7 +899,9 @@ void FsCallConverter::convertBufreaderDrops() {
+     }
+   }
+ 
+-  dbgs() << "Enclave modification: Converted drop_in_place() calls for BufReader\n";
++  if (!bufreaderConversions.empty()) {
++    dbgs() << "Enclave modification: Converted drop_in_place() calls for BufReader\n";
++  }
+ }
+ 
+ void FsCallConverter::eraseConvertedInstrs() {
+@@ -833,6 +928,8 @@ void insertSgxUsage(Function *func) {
+   FsCallConverter converter;
+ 
+   for (auto call : calls) {
++    Module *mod = call->getModule();
++
+     Function *callee = call->getCalledFunction();
+     if (!callee) {
+       // TODO: Indirect calls
+@@ -846,6 +943,8 @@ void insertSgxUsage(Function *func) {
+       converter.convertOpenoptionsCreate(call);
+     } else if (calleeName == "sgx_tstd::fs::OpenOptions::read") {
+       converter.convertOpenoptionsRead(call);
++    } else if (calleeName == "sgx_tstd::fs::OpenOptions::write") {
++      converter.convertOpenoptionsWrite(call);
+     } else if (calleeName == "sgx_tstd::fs::OpenOptions::append") {
+       converter.convertOpenoptionsAppend(call);
+     } else if (calleeName == "sgx_tstd::fs::OpenOptions::open") {
+@@ -854,8 +953,14 @@ void insertSgxUsage(Function *func) {
+       converter.convertBufreaderNew(call);
+     } else if (calleeName == "sgx_tstd::io::BufRead::read_line") {
+       converter.convertBufreaderReadline(call);
++    } else if (calleeName == "sgx_tstd::io::Read::read_to_end") {
++      if (call->getArgOperand(1)->getType() == Type::getInt32Ty(mod->getContext())->getPointerTo()) {
++        converter.convertFileReadtoend(call);
++      }
+     } else if (calleeName == "sgx_tstd::io::Write::write_all") {
+-      converter.converFileWriteall(call);
++      if (call->getArgOperand(0)->getType() == Type::getInt32Ty(mod->getContext())->getPointerTo()) {
++        converter.converFileWriteall(call);
++      }
+     }
+   }
+ 
+-- 
+2.25.1
+

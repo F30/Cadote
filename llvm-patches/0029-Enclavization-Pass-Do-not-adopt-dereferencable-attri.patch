@@ -1,0 +1,61 @@
+From 05fac54e18b2d7de103daaefe81461b77291c499 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Fri, 21 May 2021 14:02:00 +0000
+Subject: [PATCH 29/29] Enclavization Pass: Do not adopt `dereferencable`
+ attributes for `sret` arguments
+
+This could not work, since the attribute is valid for the original
+pointer, but not a pointer to such a pointer.
+---
+ .../Utils/Enclavization/Wrappers.cpp          | 21 +------------------
+ 1 file changed, 1 insertion(+), 20 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index c9afa57f0568..e6f63e5afd34 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -309,13 +309,6 @@ Function *getPostgateProxyDecl(Function *wrappedFunc) {
+       gateFunc->addParamAttr(argOffset + i, attr);
+     }
+   }
+-  if (wrappedType->getReturnType() != Type::getVoidTy(mod->getContext())) {
+-    if (wrappedFunc->hasAttribute(AttributeList::ReturnIndex, Attribute::AttrKind::Dereferenceable)) {
+-      uint64_t attrVal = wrappedFunc->getParamDereferenceableBytes(AttributeList::ReturnIndex);
+-      Attribute attr = Attribute::get(mod->getContext(), Attribute::AttrKind::Dereferenceable, attrVal);
+-      gateFunc->addParamAttr(1, attr);
+-    }
+-  }
+ 
+   return gateFunc;
+ }
+@@ -665,12 +658,7 @@ Function *getRevPregateImpl(Function *wrappedFunc) {
+ 
+     // Getting a pointer to the enclave's own memory from an untrusted function could be an exploit
+     Function *checkArgFunc = getCheckPtrToEnclaveDecl(mod);
+-    if (wrappedFunc->hasAttribute(AttributeList::ReturnIndex, Attribute::AttrKind::Dereferenceable)) {
+-      uint64_t derefSize = wrappedFunc->getParamDereferenceableBytes(AttributeList::ReturnIndex);
+-      sizedRecursivePointerCheck(revPostgateReturnVal, derefSize, checkArgFunc, successReturnBlock);
+-    } else {
+-      unsizedRecursivePointerCheck(revPostgateReturnVal, checkArgFunc, successReturnBlock);
+-    }
++    unsizedRecursivePointerCheck(revPostgateReturnVal, checkArgFunc, successReturnBlock);
+   }
+   for (size_t i = 0; i < wrappedFunc->arg_size(); ++i) {
+     // Ensure that no pointers to the enclave's memory space were passed as arguments (`sret`-style results or
+@@ -785,13 +773,6 @@ Function *getRevPostgateProxyDecl(Function *wrappedFunc) {
+       gateFunc->addParamAttr(argOffset + i, attr);
+     }
+   }
+-  if (wrappedType->getReturnType() != Type::getVoidTy(mod->getContext())) {
+-    if (wrappedFunc->hasAttribute(AttributeList::ReturnIndex, Attribute::AttrKind::Dereferenceable)) {
+-      uint64_t attrVal = wrappedFunc->getParamDereferenceableBytes(AttributeList::ReturnIndex);
+-      Attribute attr = Attribute::get(mod->getContext(), Attribute::AttrKind::Dereferenceable, attrVal);
+-      gateFunc->addParamAttr(1, attr);
+-    }
+-  }
+ 
+   return gateFunc;
+ }
+-- 
+2.25.1
+

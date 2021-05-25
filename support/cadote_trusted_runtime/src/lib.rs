@@ -4,6 +4,7 @@
 extern crate sgx_tstd as std;
 
 use std::prelude::v1::*;
+use std::io::Read;
 use std::io::BufRead;
 use std::ptr;
 
@@ -14,7 +15,7 @@ mod io_error;
 
 
 #[no_mangle]
-pub fn cadote_check_arg_ptr(ptr: *const u8, size: usize) {
+pub fn cadote_check_ptr_to_enclave(ptr: *const u8, size: usize) {
   //println!("Cadote runtime: Checking arg pointer {:?}, size {}", ptr, size);
   if trts::rsgx_raw_is_within_enclave(ptr, size) {
     panic!("Passing a pointer to enclave memory from outside, this is very nasty!");
@@ -22,11 +23,16 @@ pub fn cadote_check_arg_ptr(ptr: *const u8, size: usize) {
 }
 
 #[no_mangle]
-pub fn cadote_check_return_ptr(ptr: *const u8, size: usize) {
+pub fn cadote_check_ptr_from_enclave(ptr: *const u8, size: usize) {
   //println!("Cadote runtime: Checking return pointer {:?}, size {}", ptr, size);
   if trts::rsgx_raw_is_within_enclave(ptr, size) {
     panic!("Passing an allocation from within the enclave to the outside world");
   }
+}
+
+#[no_mangle]
+pub fn cadote_enclave_error_handler() -> ! {
+  panic!("Unrecoverable enclave error");
 }
 
 /*
@@ -38,6 +44,16 @@ pub fn cadote_sgxfs_openoptions_open(openopts: &sgxfs::OpenOptions, path: &str) 
 }
 
 /*
+ * Non-generic version of sgx_tstd::sgxfs::SgxFile::read_to_end() to avoid monomorphization hassle.
+ * While the method is not generic itself, it does call a generic function, which leads to the method also
+ * getting monomorphized.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_sgxfile_readtoend(file: &mut sgxfs::SgxFile, buf: &mut Vec<u8>) -> sgx_tstd::io::Result<usize> {
+  file.read_to_end(buf)
+}
+
+/*
  * Non-generic version of sgx_tstd::io::BufReader::new() to avoid monomorphization hassle.
  */
 #[no_mangle]
@@ -46,7 +62,7 @@ pub fn cadote_io_bufreader_new(file: sgxfs::SgxFile) -> sgx_tstd::io::BufReader<
 }
 
 /*
- * Non-generic version of sgx_tstd::io::BufReader::read_line(() to avoid monomorphization hassle.
+ * Non-generic version of sgx_tstd::io::BufReader::read_line() to avoid monomorphization hassle.
  */
 #[no_mangle]
 pub fn cadote_io_bufreader_readline(reader: &mut sgx_tstd::io::BufReader<sgxfs::SgxFile>,

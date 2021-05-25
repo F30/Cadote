@@ -1,7 +1,7 @@
 From d833e0081c795f298e5abb9781cc246c2d25137d Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Fri, 23 Apr 2021 09:32:02 +0000
-Subject: [PATCH 12/18] Enclavization Pass: Add support for LLVM integers wider
+Subject: [PATCH 12/29] Enclavization Pass: Add support for LLVM integers wider
  than the ones regularly supported
 
 ---

@@ -1,0 +1,36 @@
+From 98801ecf23270afe6e6faac92e6cfeece4e943b9 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 18 May 2021 10:36:02 +0000
+Subject: [PATCH 22/29] Enclavization Pass: Remove obsolete hack for EDL file
+ generation
+
+The comment about safety does not apply anymore, since our Postgate
+checks all pointers.
+---
+ llvm/lib/Transforms/Utils/Enclavization/Export.cpp | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index 463aa3c84839..330fa514fb36 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -110,14 +110,8 @@ void EdlFile::addTrustedFunction(Function *postgateFunc) {
+   raw_string_ostream entryStream(funcEntry);
+ 
+   entryStream << "public ";
+-  if (postgateFunc->getReturnType()->isPointerTy()) {
+-    // In most cases, pointers returned from functions will point back to input values (i.e. outside the
+-    // enclave) because of lifetimes, so this is hacky but safe
+-    // TODO: Heap allocations, which are an exemption from that
+-    entryStream << EDL_PTR_REPLACEMENT;
+-  } else {
+-    entryStream << getEdlType(postgateFunc->getReturnType(), postgateFunc->getContext());
+-  }
++  // Return type
++  entryStream << getEdlType(postgateFunc->getReturnType(), postgateFunc->getContext());
+   entryStream << " " << postgateFunc->getName().str() << "(";
+ 
+   for (size_t i = 0; i < postgateFunc->arg_size(); ++i) {
+-- 
+2.25.1
+

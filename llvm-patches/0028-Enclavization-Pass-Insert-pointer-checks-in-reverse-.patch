@@ -1,0 +1,213 @@
+From 01ebbe68bda7de472af9d6371ac3e210cca1e619 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 19 May 2021 16:43:04 +0000
+Subject: [PATCH 28/29] Enclavization Pass: Insert pointer checks in reverse
+ gates
+
+---
+ .../Utils/Enclavization/RuntimeLib.h          |  8 +--
+ .../Utils/Enclavization/RuntimeLib.cpp        | 12 ++--
+ .../Utils/Enclavization/Wrappers.cpp          | 58 ++++++++++++++++---
+ 3 files changed, 59 insertions(+), 19 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h b/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
+index c996ddb2a95c..cf93808f2ae6 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
+@@ -9,8 +9,8 @@
+ #define INIT_ENCLAVE_FUNC "cadote_init_enclave"
+ #define ENCLAVE_ID_FUNC "cadote_get_enclave_id"
+ #define ERROR_HANDLER_FUNC "cadote_enclave_error_handler"
+-#define CHECK_ARG_PTR_FUNC "cadote_check_arg_ptr"
+-#define CHECK_RETURN_PTR_FUNC "cadote_check_return_ptr"
++#define CHECK_PTR_TO_FUNC "cadote_check_ptr_to_enclave"
++#define CHECK_PTR_FROM_FUNC "cadote_check_ptr_from_enclave"
+ #define TRANSFORM_IORESULT_UNIT_FUNC "cadote_transform_ioresult_unit"
+ #define TRANSFORM_IORESULT_BOOL_FUNC "cadote_transform_ioresult_bool"
+ 
+@@ -26,9 +26,9 @@ llvm::Function *getEnclaveIdDecl(llvm::Module *);
+ 
+ llvm::Function *getErrorHandlerDecl(llvm::Module *);
+ 
+-llvm::Function *getCheckArgPtrDecl(llvm::Module *);
++llvm::Function *getCheckPtrToEnclaveDecl(llvm::Module *);
+ 
+-llvm::Function *getCheckReturnPtrDecl(llvm::Module *);
++llvm::Function *getCheckPtrFromEnclaveDecl(llvm::Module *);
+ 
+ llvm::Function *getTransformIoresultUnitDecl(llvm::Module *mod);
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp b/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
+index 0771b68fbdf7..910d65f216dd 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
+@@ -49,29 +49,29 @@ Function *getErrorHandlerDecl(Module *mod) {
+ }
+ 
+ 
+-Function *getCheckArgPtrDecl(Module *mod) {
+-  Function *checkFunc = mod->getFunction(CHECK_ARG_PTR_FUNC);
++Function *getCheckPtrToEnclaveDecl(Module *mod) {
++  Function *checkFunc = mod->getFunction(CHECK_PTR_TO_FUNC);
+   if (checkFunc) {
+     return checkFunc;
+   }
+ 
+   Type *checkArgs[] = { Type::getInt8Ty(mod->getContext())->getPointerTo(), USIZE_TYPE(mod->getContext()) };
+   FunctionType *checkType = FunctionType::get(Type::getVoidTy(mod->getContext()), checkArgs, false);
+-  checkFunc = Function::Create(checkType, Function::ExternalLinkage, CHECK_ARG_PTR_FUNC, mod);
++  checkFunc = Function::Create(checkType, Function::ExternalLinkage, CHECK_PTR_TO_FUNC, mod);
+ 
+   return checkFunc;
+ }
+ 
+ 
+-Function *getCheckReturnPtrDecl(Module *mod) {
+-  Function *checkFunc = mod->getFunction(CHECK_RETURN_PTR_FUNC);
++Function *getCheckPtrFromEnclaveDecl(Module *mod) {
++  Function *checkFunc = mod->getFunction(CHECK_PTR_FROM_FUNC);
+   if (checkFunc) {
+     return checkFunc;
+   }
+ 
+   Type *checkArgs[] = { Type::getInt8Ty(mod->getContext())->getPointerTo(), USIZE_TYPE(mod->getContext()) };
+   FunctionType *checkType = FunctionType::get(Type::getVoidTy(mod->getContext()), checkArgs, false);
+-  checkFunc = Function::Create(checkType, Function::ExternalLinkage, CHECK_RETURN_PTR_FUNC, mod);
++  checkFunc = Function::Create(checkType, Function::ExternalLinkage, CHECK_PTR_FROM_FUNC, mod);
+ 
+   return checkFunc;
+ }
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index e49366ad4315..c9afa57f0568 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -422,7 +422,7 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+     wrappedArgs.push_back(arg);
+ 
+     // Passing pointers to the enclave's own memory could be an exploit
+-    Function *checkArgFunc = getCheckArgPtrDecl(mod);
++    Function *checkArgFunc = getCheckPtrToEnclaveDecl(mod);
+     if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
+       uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+       sizedRecursivePointerCheck(arg, derefSize, checkArgFunc, postgateBlock);
+@@ -446,7 +446,7 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+     // argument, even though it may write to the memory that the pointer points to"
+     // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
+     if (!arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
+-      Function *checkReturnFunc = getCheckReturnPtrDecl(mod);
++      Function *checkReturnFunc = getCheckPtrFromEnclaveDecl(mod);
+       if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
+         uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+         sizedRecursivePointerCheck(wrappedArgs[i], derefSize, checkReturnFunc, postgateBlock);
+@@ -535,7 +535,7 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+     );
+   } else {
+     // Ensure that no pointers to the enclave's memory space are returned
+-    Function *checkReturnFunc = getCheckReturnPtrDecl(mod);
++    Function *checkReturnFunc = getCheckPtrFromEnclaveDecl(mod);
+     unsizedRecursivePointerCheck(wrappedCall, checkReturnFunc, postgateBlock);
+ 
+     // Pass result from original function
+@@ -577,38 +577,51 @@ Function *getRevPregateImpl(Function *wrappedFunc) {
+     return revPregateFunc;
+   }
+ 
+-  BasicBlock *callRevPostgateBlock = BasicBlock::Create(
++  BasicBlock *revPregateBlock = BasicBlock::Create(
+     mod->getContext(),
+-    "call_reverse_postgate",
++    "reverse_pregate",
+     revPregateFunc,
+     nullptr
+   );
+ 
++  // Offset between original and gate parameters
++  unsigned int argOffset = 0;
++
+   AllocaInst *revPostgateReturnAlloc = nullptr;
+   if (wrappedFunc->getReturnType() != Type::getVoidTy(mod->getContext())) {
+     // Proxy functions write the return value to a passed pointer
+-    revPostgateReturnAlloc = new AllocaInst(wrappedFunc->getReturnType(), 0, "", callRevPostgateBlock);
++    revPostgateReturnAlloc = new AllocaInst(wrappedFunc->getReturnType(), 0, "", revPregateBlock);
+   }
+ 
+   std::vector<Value *> revPostgateArgs;
+   if (revPostgateReturnAlloc) {
+     // Proxy function param "retval"
+     revPostgateArgs.push_back(revPostgateReturnAlloc);
++    ++argOffset;
+   }
+   for (auto arg = revPregateFunc->arg_begin(); arg != revPregateFunc->arg_end(); ++arg) {
+     revPostgateArgs.push_back(arg);
++
++    // Ensure that no pointers to the enclave's memory space end up in arguments to untrusted functions
++    Function *checkArgFunc = getCheckPtrFromEnclaveDecl(mod);
++    if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
++      uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
++      sizedRecursivePointerCheck(arg, derefSize, checkArgFunc, revPregateBlock);
++    } else {
++      unsizedRecursivePointerCheck(arg, checkArgFunc, revPregateBlock);
++    }
+   }
+ 
+   CallInst *revPostgateCall = CallInst::Create(
+     revPostgateDecl,
+     revPostgateArgs,
+     "",
+-    callRevPostgateBlock
++    revPregateBlock
+   );
+ 
+   // Check call result
+   ICmpInst *statusCheck = new ICmpInst(
+-    *callRevPostgateBlock,
++    *revPregateBlock,
+     ICmpInst::ICMP_NE,
+     revPostgateCall,
+     ConstantInt::get(SGX_STATUS_TYPE(mod->getContext()), SGX_SUCCESS),
+@@ -630,7 +643,7 @@ Function *getRevPregateImpl(Function *wrappedFunc) {
+     errorHandlingBlock,
+     successReturnBlock,
+     statusCheck,
+-    callRevPostgateBlock
++    revPregateBlock
+   );
+ 
+   Function *errorHandlerDecl = getErrorHandlerDecl(mod);
+@@ -649,6 +662,33 @@ Function *getRevPregateImpl(Function *wrappedFunc) {
+       "",
+       successReturnBlock
+     );
++
++    // Getting a pointer to the enclave's own memory from an untrusted function could be an exploit
++    Function *checkArgFunc = getCheckPtrToEnclaveDecl(mod);
++    if (wrappedFunc->hasAttribute(AttributeList::ReturnIndex, Attribute::AttrKind::Dereferenceable)) {
++      uint64_t derefSize = wrappedFunc->getParamDereferenceableBytes(AttributeList::ReturnIndex);
++      sizedRecursivePointerCheck(revPostgateReturnVal, derefSize, checkArgFunc, successReturnBlock);
++    } else {
++      unsizedRecursivePointerCheck(revPostgateReturnVal, checkArgFunc, successReturnBlock);
++    }
++  }
++  for (size_t i = 0; i < wrappedFunc->arg_size(); ++i) {
++    // Ensure that no pointers to the enclave's memory space were passed as arguments (`sret`-style results or
++    // mutable references), as that might be an exploit
++    Argument *arg = wrappedFunc->getArg(i);
++    // LLVM's semantics for `readonly` only guarantee that "the function does not write through this pointer
++    // argument, even though it may write to the memory that the pointer points to"
++    // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
++    if (!arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
++      // TODO: Check name
++      Function *checkArgFunc = getCheckPtrToEnclaveDecl(mod);
++      if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
++        uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
++        sizedRecursivePointerCheck(revPostgateArgs[i + argOffset], derefSize, checkArgFunc, successReturnBlock);
++      } else {
++        unsizedRecursivePointerCheck(revPostgateArgs[i + argOffset], checkArgFunc, successReturnBlock);
++      }
++    }
+   }
+ 
+   if (revPostgateReturnVal) {
+-- 
+2.25.1
+
