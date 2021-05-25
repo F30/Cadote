@@ -29,6 +29,7 @@ use rustyline;
 static SHADOW_FILENAME: &str = "users.shadow";
 
 
+#[cfg(feature = "enclavization_bin")]
 fn main() {
   println!("USER ADMINISTRATION TOOL");
   println!();
@@ -41,6 +42,7 @@ fn main() {
   }
 }
 
+#[cfg(feature = "enclavization_bin")]
 fn initial_root_prompt() {
   println!("No users available, creating root user...");
 
@@ -52,6 +54,7 @@ fn initial_root_prompt() {
   admin_loop();
 }
 
+#[cfg(feature = "enclavization_bin")]
 fn login_prompt() {
   let mut rl = rustyline::Editor::<()>::new();
   let mut username: String;
@@ -78,6 +81,7 @@ fn login_prompt() {
   }
 }
 
+#[cfg(feature = "enclavization_bin")]
 fn admin_loop() {
   let mut rl = rustyline::Editor::<()>::new();
 
@@ -109,14 +113,13 @@ fn admin_loop() {
   }
 }
 
+#[cfg(feature = "enclavization_bin")]
 fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
   let line = match rl.readline(prompt) {
     Ok(l) => l,
     Err(rustyline::error::ReadlineError::Eof) => String::from(""),
     Err(rustyline::error::ReadlineError::Interrupted) => {
-      // TODO, sgx_tstd doesn't support std::process::exit()
-      //std::process::exit(0);
-      panic!("Regular exit");
+      std::process::exit(0);
     },
     Err(e) => {
       panic!("Could not get input: {}", e);
