@@ -109,6 +109,34 @@ fn pass_ref_enclaved_(param: &i64) {
   println!("This should not work: {}", param);
 }
 
+#[allow(dead_code)]
+fn reverse_pass_ref_enclaved_() {
+  let i = 1337;
+  let j = 1338;
+  reverse_give_ref([&i, &j]);
+}
+
+#[allow(dead_code)]
+fn reverse_give_ref(param: [&i64; 2]) {
+  println!("This should not work: {:?}", param);
+}
+
+#[allow(dead_code)]
+unsafe fn reverse_pass_enclave_addr_enclaved_() {
+  let val = 200;
+  let raw_ptr: *const i64 = &val;
+  let addr = raw_ptr as usize;
+  println!("This should not work: {}", reverse_get_enclave_ref(addr));
+}
+
+#[allow(dead_code)]
+unsafe fn reverse_get_enclave_ref<'a>(addr: usize) -> &'a i64 {
+  println!("Got enclave address 0x{:x}, now passing it back as reference (that should fail)", addr);
+  let raw_ptr = addr as *const i64;
+  // Trigger the "Passing a pointer to enclave memory from outside" case
+  raw_ptr.as_ref().unwrap()
+}
+
 fn main() {
   let x = 42;
   let y = "abcdefghi";
@@ -138,5 +166,9 @@ fn main() {
   //println!("Value: {:?}", z);
   //unsafe {
   //  pass_enclave_addr();
+  //}
+  //reverse_pass_ref_enclaved_();
+  //unsafe {
+  //  reverse_pass_enclave_addr_enclaved_();
   //}
 }
