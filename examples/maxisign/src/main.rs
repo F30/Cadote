@@ -61,11 +61,13 @@ impl From<std::io::Error> for Error {
 }
 
 
+// Additional guard macro for being able to use the std::process, base64 and exitcode libraries
 #[cfg(feature = "enclavization_bin")]
 fn main() {
   let args: Vec<String> = std::env::args().collect();
   if args.len() < 2 {
-    exit_usage();
+    eprintln!("Usage: maxisign <genkey | sign | verify <sig-file>>");
+    process::exit(exitcode::USAGE);
   }
 
   if args[1] == "genkey" {
@@ -85,14 +87,9 @@ fn main() {
       println!("Invalid signature! :-(");
     }
   } else {
-    exit_usage();
+    eprintln!("Usage: maxisign <genkey | sign | verify <sig-file>>");
+    process::exit(exitcode::USAGE);
   }
-}
-
-#[cfg(feature = "enclavization_bin")]
-fn exit_usage() {
-  eprintln!("Usage: maxisign <genkey | sign | verify <sig-file>>");
-  process::exit(exitcode::USAGE);
 }
 
 fn gen_key_enclaved_(privkey_filename: &str, pubkey_filename: &str) -> Result<(), Error> {

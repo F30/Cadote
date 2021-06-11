@@ -29,6 +29,8 @@ use rustyline;
 static SHADOW_FILENAME: &str = "users.shadow";
 
 
+// Additional guard macro for being able to use std::process::exit() in a called function
+// Otherwise not required, see commit ab72d858
 #[cfg(feature = "enclavization_bin")]
 fn main() {
   println!("USER ADMINISTRATION TOOL");
@@ -42,6 +44,7 @@ fn main() {
   }
 }
 
+// Additional guard macro, see above
 #[cfg(feature = "enclavization_bin")]
 fn initial_root_prompt() {
   println!("No users available, creating root user...");
@@ -54,6 +57,7 @@ fn initial_root_prompt() {
   admin_loop();
 }
 
+// Additional guard macro, see above
 #[cfg(feature = "enclavization_bin")]
 fn login_prompt() {
   let mut rl = rustyline::Editor::<()>::new();
@@ -81,6 +85,7 @@ fn login_prompt() {
   }
 }
 
+// Additional guard macro, see above
 #[cfg(feature = "enclavization_bin")]
 fn admin_loop() {
   let mut rl = rustyline::Editor::<()>::new();
@@ -113,6 +118,7 @@ fn admin_loop() {
   }
 }
 
+// Additional guard macro, see above
 #[cfg(feature = "enclavization_bin")]
 fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
   let line = match rl.readline(prompt) {
