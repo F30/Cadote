@@ -1,0 +1,675 @@
+From 4d8157519b6eedd91b620d1e6b09e3ba9d6edb2e Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Mon, 28 Jun 2021 20:23:56 +0000
+Subject: [PATCH 30/30] Enclavization Pass: Implement memory copies in postcall
+ functions
+
+---
+ .../Transforms/Utils/Enclavization/CopyMem.h  |  22 +
+ .../Utils/Enclavization/EnclaveModify.h       |   4 +-
+ .../Utils/Enclavization/RuntimeLib.h          |   9 +
+ llvm/lib/Transforms/Utils/CMakeLists.txt      |   1 +
+ .../Utils/Enclavization/CopyMem.cpp           | 379 ++++++++++++++++++
+ .../Utils/Enclavization/RuntimeLib.cpp        |  43 ++
+ .../Utils/Enclavization/Wrappers.cpp          |  82 ++--
+ 7 files changed, 509 insertions(+), 31 deletions(-)
+ create mode 100644 llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h
+ create mode 100644 llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h b/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h
+new file mode 100644
+index 000000000000..8eb640c4c1ea
+--- /dev/null
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h
+@@ -0,0 +1,22 @@
++#ifndef LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_COPY_MEM_H
++#define LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_COPY_MEM_H
++
++#include "llvm/IR/BasicBlock.h"
++#include "llvm/IR/Value.h"
++
++
++bool probablyIsSlice(llvm::Value *);
++
++llvm::Value *recursiveCopy(llvm::Value *, size_t, llvm::BasicBlock *);
++
++llvm::Value *recursiveCopy(llvm::Value *, llvm::Value *, llvm::BasicBlock *);
++
++llvm::Value *recursiveCopy(llvm::Value *, llvm::BasicBlock *);
++
++llvm::Value *recursiveMapBack(llvm::Value *, size_t, llvm::BasicBlock *);
++
++llvm::Value *recursiveMapBack(llvm::Value *, llvm::Value *, llvm::BasicBlock *);
++
++llvm::Value *recursiveMapBack(llvm::Value *, llvm::BasicBlock *);
++
++#endif
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+index 78e7f8907b44..0d37b4820136 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+@@ -1,5 +1,5 @@
+-#ifndef LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_ENCLAVED_MODIFY_H
+-#define LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_ENCLAVED_MODIFY_H
++#ifndef LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_ENCLAVE_MODIFY_H
++#define LLVM_TRANSFORMS_UTILS_ENCLAVIZATION_ENCLAVE_MODIFY_H
+ 
+ #include <unordered_map>
+ #include <vector>
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h b/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
+index cf93808f2ae6..2364f77e6eb5 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/RuntimeLib.h
+@@ -13,6 +13,9 @@
+ #define CHECK_PTR_FROM_FUNC "cadote_check_ptr_from_enclave"
+ #define TRANSFORM_IORESULT_UNIT_FUNC "cadote_transform_ioresult_unit"
+ #define TRANSFORM_IORESULT_BOOL_FUNC "cadote_transform_ioresult_bool"
++#define COPY_TO_ENCLAVE_FUNC "cadote_copy_to_enclave"
++#define MAP_BACK_FROM_ENCLAVE_FUNC "cadote_map_back_from_enclave"
++#define COPY_BACK_FROM_ENCLAVE_FUNC "cadote_copy_back_from_enclave"
+ 
+ // LLVM type for `usize`
+ #define USIZE_TYPE Type::getInt64Ty
+@@ -28,6 +31,12 @@ llvm::Function *getErrorHandlerDecl(llvm::Module *);
+ 
+ llvm::Function *getCheckPtrToEnclaveDecl(llvm::Module *);
+ 
++llvm::Function *getCopyToEnclaveFuncDecl(llvm::Module *);
++
++llvm::Function *getMapBackFromEnclaveFuncDecl(llvm::Module *);
++
++llvm::Function *getCopyBackFromEnclaveFuncDecl(llvm::Module *);
++
+ llvm::Function *getCheckPtrFromEnclaveDecl(llvm::Module *);
+ 
+ llvm::Function *getTransformIoresultUnitDecl(llvm::Module *mod);
+diff --git a/llvm/lib/Transforms/Utils/CMakeLists.txt b/llvm/lib/Transforms/Utils/CMakeLists.txt
+index b7afbbfe802f..c4171c304633 100644
+--- a/llvm/lib/Transforms/Utils/CMakeLists.txt
++++ b/llvm/lib/Transforms/Utils/CMakeLists.txt
+@@ -20,6 +20,7 @@ add_llvm_component_library(LLVMTransformUtils
+   DemoteRegToStack.cpp
+   EnclavizationBinPass.cpp
+   EnclavizationLibPass.cpp
++  Enclavization/CopyMem.cpp
+   Enclavization/EnclaveModify.cpp
+   Enclavization/Export.cpp
+   Enclavization/RuntimeLib.cpp
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp b/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp
+new file mode 100644
+index 000000000000..ccd49ef5acc4
+--- /dev/null
++++ b/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp
+@@ -0,0 +1,379 @@
++#include <tuple>
++
++#include "llvm/IR/BasicBlock.h"
++#include "llvm/IR/Constants.h"
++#include "llvm/IR/DataLayout.h"
++#include "llvm/IR/DerivedTypes.h"
++#include "llvm/IR/Function.h"
++#include "llvm/IR/Instructions.h"
++#include "llvm/IR/InstrTypes.h"
++#include "llvm/IR/Type.h"
++#include "llvm/IR/Value.h"
++#include "llvm/Support/Debug.h"
++
++#include "llvm/Transforms/Utils/Enclavization/CopyMem.h"
++#include "llvm/Transforms/Utils/Enclavization/RuntimeLib.h"
++
++using namespace llvm;
++
++#define DEBUG_TYPE "enclavization-lib-pass"
++
++
++bool probablyIsSlice(Value *val) {
++  Type *type = val->getType();
++  if (!(type->isPointerTy())) {
++    return false;
++  }
++
++  Type *pointedToType = type->getPointerElementType();
++  if (!(pointedToType->isArrayTy())) {
++    return false;
++  }
++
++  ArrayType *arrType = dyn_cast<ArrayType>(pointedToType);
++  if (arrType->getNumElements() != 0) {
++    return false;
++  }
++
++  return true;
++}
++
++
++static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm::BasicBlock *insertionBlock) {
++  Module *mod = insertionBlock->getParent()->getParent();
++  DataLayout dataLayout = mod->getDataLayout();
++
++  Value *newVal = nullptr;
++
++  if (origVal->getType()->isPointerTy()) {
++    Type *pointedToType = origVal->getType()->getPointerElementType();
++
++    // Determine size to be copied
++    if (sizeKnown) {
++      assert(size->getType()->isIntegerTy() && "Size for copying memory must be integer");
++    } else {
++      if (pointedToType->isSized()) {
++        uint64_t pointedToSize = dataLayout.getTypeAllocSize(pointedToType);
++        assert(pointedToSize != 0 && "Size for copying memory cannot be 0");
++        size = ConstantInt::get(USIZE_TYPE(mod->getContext()), pointedToSize);
++      } else {
++        assert(false && "Cannot determine size for copying memory cannot be 0");
++      }
++    }
++
++    // Insert actual copy instructions for runtime
++    Value *srcPtr = new BitCastInst(
++      origVal,
++      Type::getInt8Ty(mod->getContext())->getPointerTo(),
++      "",
++      insertionBlock
++    );
++    Function *copyFunc = getCopyToEnclaveFuncDecl(mod);
++    Value *copyArgs[] = {
++      srcPtr,
++      size
++    };
++    Value *dstPtr = CallInst::Create(
++      copyFunc,
++      copyArgs,
++      "",
++      insertionBlock
++    );
++    newVal = new BitCastInst(
++      dstPtr,
++      origVal->getType(),
++      "",
++      insertionBlock
++    );
++
++    // Recursively copy pointer target
++    if (pointedToType->isPointerTy() || pointedToType->isArrayTy() || pointedToType->isStructTy()) {
++      Value *pointedToVal = new LoadInst(
++        pointedToType,
++        newVal,
++        "",
++        insertionBlock
++      );
++      Value *copyResult = recursiveCopy(pointedToVal, insertionBlock);
++      if (copyResult) {
++        new StoreInst(
++          copyResult,
++          newVal,
++          insertionBlock
++        );
++      }
++    }
++  } else if (origVal->getType()->isArrayTy()) {
++    Value *arr = origVal;
++    ArrayType *arrType = dyn_cast<ArrayType>(origVal->getType());
++
++    for (unsigned int i = 0; i < arrType->getNumElements(); ++i) {
++      unsigned int indexes[] = { i };
++      Value *elem = ExtractValueInst::Create(
++        origVal,
++        indexes,
++        "",
++        insertionBlock
++      );
++      Value *copyResult = recursiveCopy(elem, insertionBlock);
++      if (copyResult) {
++        arr = InsertValueInst::Create(
++          arr,
++          copyResult,
++          indexes,
++          "",
++          insertionBlock
++        );
++        newVal = arr;
++      }
++    }
++  } else if (origVal->getType()->isStructTy()) {
++    Value *strct = origVal;
++    StructType *strctType = dyn_cast<StructType>(origVal->getType());
++
++    for (unsigned int i = 0; i < strctType->getNumElements(); ++i) {
++      unsigned int indexes[] = { i };
++      Value *elem = ExtractValueInst::Create(
++        origVal,
++        indexes,
++        "",
++        insertionBlock
++      );
++
++      Value *copyResult;
++      if (probablyIsSlice(elem) && i != strctType->getNumElements()-1 && strctType->getStructElementType(i+1)->isIntegerTy()) {
++        unsigned int countIndexes[] = { i+1 };
++        Value *copyCount = ExtractValueInst::Create(
++          origVal,
++          countIndexes,
++          "",
++          insertionBlock
++        );
++        copyResult = recursiveCopy(elem, copyCount, insertionBlock);
++      } else {
++        copyResult = recursiveCopy(elem, insertionBlock);
++      }
++
++      if (copyResult) {
++        strct = InsertValueInst::Create(
++          strct,
++          copyResult,
++          indexes,
++          "",
++          insertionBlock
++        );
++        newVal = strct;
++      }
++    }
++  }
++
++  return newVal;
++}
++
++
++Value *recursiveCopy(Value *origVal, size_t size, llvm::BasicBlock *insertionBlock) {
++  Module *mod = insertionBlock->getParent()->getParent();
++  ConstantInt *copySize = ConstantInt::get(USIZE_TYPE(mod->getContext()), size);
++
++  return doRecursiveCopy(origVal, true, copySize, insertionBlock);
++}
++
++
++Value *recursiveCopy(Value *origVal, Value *count, llvm::BasicBlock *insertionBlock) {
++  Module *mod = insertionBlock->getParent()->getParent();
++  DataLayout dataLayout = mod->getDataLayout();
++  // The function should only ever be relevant for slices
++  assert(probablyIsSlice(origVal) && "recursiveCopy() with count expects slices only");
++
++  // Calculate size in bits
++  Type *pointedToType = origVal->getType()->getPointerElementType();
++  ArrayType *arrType = dyn_cast<ArrayType>(pointedToType);
++  Type *elemType = arrType->getElementType();
++  assert(elemType->isSized() && "Cannot determine copy size from count");
++  uint64_t elemSize = dataLayout.getTypeAllocSize(elemType);
++  Value *elemSizeVal = ConstantInt::get(USIZE_TYPE(mod->getContext()), elemSize);
++
++  Value *size = BinaryOperator::Create(
++    Instruction::Mul,
++    count,
++    elemSizeVal,
++    "",
++    insertionBlock
++  );
++
++  return doRecursiveCopy(origVal, true, size, insertionBlock);
++}
++
++
++Value *recursiveCopy(Value *origVal, llvm::BasicBlock *insertionBlock) {
++  return doRecursiveCopy(origVal, false, nullptr, insertionBlock);
++}
++
++
++static Value *doRecursiveMapBack(Value *valToMap, bool sizeKnown, Value *size, llvm::BasicBlock *insertionBlock) {
++  Module *mod = insertionBlock->getParent()->getParent();
++  DataLayout dataLayout = mod->getDataLayout();
++
++  Value *mappedVal = nullptr;
++
++  if (valToMap->getType()->isPointerTy()) {
++    Type *pointedToType = valToMap->getType()->getPointerElementType();
++
++    // Compared to doRecursiveCopy(), do recursion first to avoid following (restored) untrusted pointers
++    if (pointedToType->isPointerTy() || pointedToType->isArrayTy() || pointedToType->isStructTy()) {
++      Value *pointedToVal = new LoadInst(
++        pointedToType,
++        valToMap,
++        "",
++        insertionBlock
++      );
++      Value *mapResult = recursiveMapBack(pointedToVal, insertionBlock);
++      if (mapResult) {
++        new StoreInst(
++          mapResult,
++          valToMap,
++          insertionBlock
++        );
++      }
++    }
++
++    if (sizeKnown) {
++      assert(size->getType()->isIntegerTy() && "Size for mapping memory must be integer");
++    } else {
++      if (pointedToType->isSized()) {
++        uint64_t pointedToSize = dataLayout.getTypeAllocSize(pointedToType);
++        assert(pointedToSize != 0 && "Size for mapping memory cannot be 0");
++        size = ConstantInt::get(USIZE_TYPE(mod->getContext()), pointedToSize);
++      } else {
++        assert(false && "Cannot determine size for mapping memory cannot be 0");
++      }
++    }
++
++    Value *srcPtr = new BitCastInst(
++      valToMap,
++      Type::getInt8Ty(mod->getContext())->getPointerTo(),
++      "",
++      insertionBlock
++    );
++    Function *mapFunc = getMapBackFromEnclaveFuncDecl(mod);
++    Value *mapArgs[] = {
++      srcPtr,
++      size
++    };
++    Value *dstPtr = CallInst::Create(
++      mapFunc,
++      mapArgs,
++      "",
++      insertionBlock
++    );
++    mappedVal = new BitCastInst(
++      dstPtr,
++      valToMap->getType(),
++      "",
++      insertionBlock
++    );
++  } else if (valToMap->getType()->isArrayTy()) {
++    Value *arr = valToMap;
++    ArrayType *arrType = dyn_cast<ArrayType>(valToMap->getType());
++
++    for (unsigned int i = 0; i < arrType->getNumElements(); ++i) {
++      unsigned int indexes[] = { i };
++      Value *elem = ExtractValueInst::Create(
++        valToMap,
++        indexes,
++        "",
++        insertionBlock
++      );
++      Value *mapResult = recursiveMapBack(elem, insertionBlock);
++      if (mapResult) {
++        arr = InsertValueInst::Create(
++          arr,
++          mapResult,
++          indexes,
++          "",
++          insertionBlock
++        );
++        mappedVal = arr;
++      }
++    }
++  } else if (valToMap->getType()->isStructTy()) {
++    Value *strct = valToMap;
++    StructType *strctType = dyn_cast<StructType>(valToMap->getType());
++
++    for (unsigned int i = 0; i < strctType->getNumElements(); ++i) {
++      unsigned int indexes[] = { i };
++      Value *elem = ExtractValueInst::Create(
++        valToMap,
++        indexes,
++        "",
++        insertionBlock
++      );
++
++      Value *mapResult;
++      if (probablyIsSlice(elem) && i != strctType->getNumElements()-1 && strctType->getStructElementType(i+1)->isIntegerTy()) {
++        unsigned int countIndexes[] = { i+1 };
++        Value *mapCount = ExtractValueInst::Create(
++          valToMap,
++          countIndexes,
++          "",
++          insertionBlock
++        );
++        mapResult = recursiveMapBack(elem, mapCount, insertionBlock);
++      } else {
++        mapResult = recursiveMapBack(elem, insertionBlock);
++      }
++
++      if (mapResult) {
++        strct = InsertValueInst::Create(
++          strct,
++          mapResult,
++          indexes,
++          "",
++          insertionBlock
++        );
++        mappedVal = strct;
++      }
++    }
++  }
++
++  return mappedVal;
++}
++
++
++Value *recursiveMapBack(Value *valToMap, size_t size, llvm::BasicBlock *insertionBlock) {
++  Module *mod = insertionBlock->getParent()->getParent();
++  ConstantInt *mapSize = ConstantInt::get(USIZE_TYPE(mod->getContext()), size);
++
++  return doRecursiveMapBack(valToMap, true, mapSize, insertionBlock);
++}
++
++
++Value *recursiveMapBack(Value *valToMap, Value *count, llvm::BasicBlock *insertionBlock) {
++  Module *mod = insertionBlock->getParent()->getParent();
++  DataLayout dataLayout = mod->getDataLayout();
++  // The function should only ever be relevant for slices
++  assert(probablyIsSlice(valToMap) && "recursiveMapBack() with count expects slices only");
++
++  // Calculate size in bits
++  Type *pointedToType = valToMap->getType()->getPointerElementType();
++  ArrayType *arrType = dyn_cast<ArrayType>(pointedToType);
++  Type *elemType = arrType->getElementType();
++  assert(elemType->isSized() && "Cannot determine mapping size from count");
++  uint64_t elemSize = dataLayout.getTypeAllocSize(elemType);
++  Value *elemSizeVal = ConstantInt::get(USIZE_TYPE(mod->getContext()), elemSize);
++
++  Value *size = BinaryOperator::Create(
++    Instruction::Mul,
++    count,
++    elemSizeVal,
++    "",
++    insertionBlock
++  );
++
++  return doRecursiveMapBack(valToMap, true, size, insertionBlock);
++}
++
++
++Value *recursiveMapBack(Value *valToMap, llvm::BasicBlock *insertionBlock) {
++  return doRecursiveMapBack(valToMap, false, nullptr, insertionBlock);
++}
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp b/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
+index 910d65f216dd..c22d2f9ca14f 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/RuntimeLib.cpp
+@@ -63,6 +63,49 @@ Function *getCheckPtrToEnclaveDecl(Module *mod) {
+ }
+ 
+ 
++Function *getCopyToEnclaveFuncDecl(Module *mod) {
++  Function *copyFunc = mod->getFunction(COPY_TO_ENCLAVE_FUNC);
++  if (copyFunc) {
++    return copyFunc;
++  }
++
++  Type *copyArgs[] = { Type::getInt8Ty(mod->getContext())->getPointerTo(), USIZE_TYPE(mod->getContext()) };
++  Type *returnType = Type::getInt8Ty(mod->getContext())->getPointerTo();
++  FunctionType *copyType = FunctionType::get(returnType, copyArgs, false);
++  copyFunc = Function::Create(copyType, Function::ExternalLinkage, COPY_TO_ENCLAVE_FUNC, mod);
++
++  return copyFunc;
++}
++
++
++Function *getMapBackFromEnclaveFuncDecl(Module *mod) {
++  Function *mapFunc = mod->getFunction(MAP_BACK_FROM_ENCLAVE_FUNC);
++  if (mapFunc) {
++    return mapFunc;
++  }
++
++  Type *mapArgs[] = { Type::getInt8Ty(mod->getContext())->getPointerTo(), USIZE_TYPE(mod->getContext()) };
++  Type *returnType = Type::getInt8Ty(mod->getContext())->getPointerTo();
++  FunctionType *mapType = FunctionType::get(returnType, mapArgs, false);
++  mapFunc = Function::Create(mapType, Function::ExternalLinkage, MAP_BACK_FROM_ENCLAVE_FUNC, mod);
++
++  return mapFunc;
++}
++
++
++Function *getCopyBackFromEnclaveFuncDecl(Module *mod) {
++  Function *copyFunc = mod->getFunction(COPY_BACK_FROM_ENCLAVE_FUNC);
++  if (copyFunc) {
++    return copyFunc;
++  }
++
++  FunctionType *copyType = FunctionType::get(Type::getVoidTy(mod->getContext()), false);
++  copyFunc = Function::Create(copyType, Function::ExternalLinkage, COPY_BACK_FROM_ENCLAVE_FUNC, mod);
++
++  return copyFunc;
++}
++
++
+ Function *getCheckPtrFromEnclaveDecl(Module *mod) {
+   Function *checkFunc = mod->getFunction(CHECK_PTR_FROM_FUNC);
+   if (checkFunc) {
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index e6f63e5afd34..bff9ecbc1ee7 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -1,4 +1,5 @@
+ #include <assert.h>
++#include <iterator>
+ #include <sstream>
+ #include <string>
+ #include <vector>
+@@ -13,7 +14,9 @@
+ #include "llvm/IR/Type.h"
+ #include "llvm/IR/Value.h"
+ #include "llvm/Support/Casting.h"
++#include "llvm/Support/Debug.h"
+ 
++#include "llvm/Transforms/Utils/Enclavization/CopyMem.h"
+ #include "llvm/Transforms/Utils/Enclavization/Export.h"
+ #include "llvm/Transforms/Utils/Enclavization/RuntimeLib.h"
+ #include "llvm/Transforms/Utils/Enclavization/Support.h"
+@@ -22,6 +25,8 @@
+ 
+ using namespace llvm;
+ 
++#define DEBUG_TYPE "enclavization-lib-pass"
++
+ #define PRE_GATE_PREFIX "_enclave_pregate_"
+ #define POST_GATE_PREFIX "_enclave_postgate_"
+ #define REV_PRE_GATE_PREFIX "_reverse_pregate_"
+@@ -412,15 +417,25 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+ 
+   std::vector<Value *> wrappedArgs;
+   for (auto arg = postgateFunc->arg_begin(); arg != postgateFunc->arg_end(); ++arg) {
+-    wrappedArgs.push_back(arg);
+-
+-    // Passing pointers to the enclave's own memory could be an exploit
+-    Function *checkArgFunc = getCheckPtrToEnclaveDecl(mod);
++    Value *copiedArg;
+     if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
+       uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+-      sizedRecursivePointerCheck(arg, derefSize, checkArgFunc, postgateBlock);
++      copiedArg = recursiveCopy(arg, derefSize, postgateBlock);
++    } else if (probablyIsSlice(arg)) {
++      auto nextArg = std::next(arg);
++      if (nextArg != postgateFunc->arg_end() && (nextArg->getType()->isIntegerTy())) {
++        copiedArg = recursiveCopy(arg, nextArg, postgateBlock);
++      } else {
++        copiedArg = recursiveCopy(arg, postgateBlock);
++      }
+     } else {
+-      unsizedRecursivePointerCheck(arg, checkArgFunc, postgateBlock);
++      copiedArg = recursiveCopy(arg, postgateBlock);
++    }
++
++    if (copiedArg) {
++      wrappedArgs.push_back(copiedArg);
++    } else {
++      wrappedArgs.push_back(arg);
+     }
+   }
+   // Call original function
+@@ -431,24 +446,7 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+     postgateBlock
+   );
+ 
+-  for (size_t i = 0; i < wrappedFunc->arg_size(); ++i) {
+-    // Ensure that no pointers to the enclave's memory space ended up in memory passed via argumen (`sret`-
+-    // style results or mutable references)
+-    Argument *arg = wrappedFunc->getArg(i);
+-    // LLVM's semantics for `readonly` only guarantee that "the function does not write through this pointer
+-    // argument, even though it may write to the memory that the pointer points to"
+-    // However, rustc (as of nightly-2020-10-25) will set this for (completely) unmutable references
+-    if (!arg->hasAttribute(Attribute::AttrKind::ReadOnly)) {
+-      Function *checkReturnFunc = getCheckPtrFromEnclaveDecl(mod);
+-      if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
+-        uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+-        sizedRecursivePointerCheck(wrappedArgs[i], derefSize, checkReturnFunc, postgateBlock);
+-      } else {
+-        unsizedRecursivePointerCheck(wrappedArgs[i], checkReturnFunc, postgateBlock);
+-      }
+-    }
+-  }
+-
++  // Pass result from original function
+   Value *returnVal = wrappedCall;
+ 
+   std::string wrappedFuncName = demangleRustName(wrappedFunc->getName());
+@@ -521,17 +519,43 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+     );
+   }
+ 
++  // Restore pointers to untrusted memory in parameters
++  // Only really relevant for mutable params and `sret`-style return pointers, but do it always for the sake
++  // of simplicity
++  for (size_t i = 0; i < wrappedFunc->arg_size(); ++i) {
++    Argument *arg = wrappedFunc->getArg(i);
++    if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
++      uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
++      recursiveMapBack(wrappedArgs[i], derefSize, postgateBlock);
++    } else if (probablyIsSlice(arg)) {
++      if (i != wrappedFunc->arg_size()-1 && (wrappedArgs[i+1]->getType()->isIntegerTy())) {
++        recursiveMapBack(wrappedArgs[i], wrappedArgs[i+1], postgateBlock);
++      } else {
++        recursiveMapBack(wrappedArgs[i], postgateBlock);
++      }
++    } else {
++      recursiveMapBack(wrappedArgs[i], postgateBlock);
++    }
++  }
++  if (wrappedFunc->getReturnType() != Type::getVoidTy(mod->getContext())) {
++    Value *mappedReturnVal = recursiveMapBack(returnVal, postgateBlock);
++    if (mappedReturnVal) {
++      returnVal = mappedReturnVal;
++    }
++  }
++  Function *copyBackFunc = getCopyBackFromEnclaveFuncDecl(mod);
++  CallInst::Create(
++    copyBackFunc,
++    "",
++    postgateBlock
++  );
++
+   if (wrappedFunc->getReturnType() == Type::getVoidTy(mod->getContext())) {
+     ReturnInst::Create(
+       mod->getContext(),
+       postgateBlock
+     );
+   } else {
+-    // Ensure that no pointers to the enclave's memory space are returned
+-    Function *checkReturnFunc = getCheckPtrFromEnclaveDecl(mod);
+-    unsizedRecursivePointerCheck(wrappedCall, checkReturnFunc, postgateBlock);
+-
+-    // Pass result from original function
+     ReturnInst::Create(
+       mod->getContext(),
+       returnVal,
+-- 
+2.25.1
+

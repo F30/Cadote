@@ -27,12 +27,8 @@ struct User {
 
 #[no_mangle]
 pub fn foo_enclaved_(param1: &i64, param2: &str) -> i64 {
-  println!("The passed_parameters are: {} {}", param1, param2);
+  println!("The passed parameters are: {} {}", param1, param2);
   99
-}
-
-fn get_array_enclaved_() -> [i64; 20] {
-  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 }
 
 fn get_short_tuple_enclaved_() -> (i64, i64) {
@@ -43,6 +39,10 @@ fn get_long_tuple_enclaved_() -> (f64, bool, bool, bool, bool, bool, bool, bool,
   (1337.0, true, false, true, false, true, false, true, false, true, false, true)
 }
 
+fn take_tuple_ref_enclaved_(param: &(i32, bool)) {
+  println!("The passed-by-reference tuple is: {:?}", param);
+}
+
 fn get_struct_enclaved_() -> User {
   User {
     sign_in_count: 2,
@@ -50,22 +50,48 @@ fn get_struct_enclaved_() -> User {
   }
 }
 
+fn get_array_enclaved_() -> [i64; 20] {
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+}
+
+fn take_array_enclaved_(param: [i64; 5]) {
+  println!("The passed array is: {:?}", param);
+}
+
+fn take_array_ref_enclaved_(param: &[i64; 5]) {
+  println!("The passed-by-reference array is: {:?}", param);
+}
+
+fn modify_array_ref_enclaved_(param: &mut[i64; 3]) {
+  param[1] = 23;
+}
+
 fn pass_slice_enclaved_(param: &str) -> &str {
   &param[6..]
+}
+
+fn modify_slice_array_enclaved_(param: [&mut [i64]; 2]) {
+  param[1][0] = 1337;
+}
+
+fn pass_slice_slice_enclaved_(param: &mut [&[i64]]) {
+  let subslice = &param[0][..2];
+  param[1] = subslice;
 }
 
 fn get_long_int_enclaved_() -> i128 {
   i128::MAX - 2000
 }
 
-fn get_result_enclaved_(i: i64) -> Result<(), &'static str> {
+fn get_result_enclaved_(i: i64) -> Result<(), i64> {
   if i >= 0 {
     Ok(())
   } else {
-    Err("Error message")
+    Err(-1)
   }
 }
 
+#[allow(dead_code)]
 fn take_string_enclaved_(s: String) {
   println!("Got string: {}", s);
 }
@@ -137,27 +163,50 @@ unsafe fn reverse_get_enclave_ref<'a>(addr: usize) -> &'a i64 {
   raw_ptr.as_ref().unwrap()
 }
 
+
 fn main() {
   let x = 42;
   let y = "abcdefghi";
   let a = foo_enclaved_(&x, &y[3..]);
   println!("foo() return value: {}", a);
 
-  let b = get_array_enclaved_();
-  println!("Array: {:?}", b);
-  let c = get_short_tuple_enclaved_();
-  println!("Short tuple: {:?}", c);
-  let d = get_long_tuple_enclaved_();
-  println!("Long tuple: {:?}", d);
+  let b = get_short_tuple_enclaved_();
+  println!("Short tuple: {:?}", b);
+  let c = get_long_tuple_enclaved_();
+  println!("Long tuple: {:?}", c);
+  let d = (-5, false);
+  take_tuple_ref_enclaved_(&d);
   let e = get_struct_enclaved_();
   println!("Struct: {:?}", e);
-  let f = pass_slice_enclaved_("Hello world");
-  println!("Passed slice: {:?}", f);
-  let g = get_long_int_enclaved_();
-  println!("Long int: {}", g);
+
+  let f = get_array_enclaved_();
+  println!("Array: {:?}", f);
+  let g = [100, 99, 98, 97, 96];
+  take_array_enclaved_(g);
+  take_array_ref_enclaved_(&g);
+  let mut f = [10, 20, 30];
+  modify_array_ref_enclaved_(&mut f);
+  println!("Array after modification: {:?}", f);
+
+  let g = pass_slice_enclaved_("Hello world");
+  println!("Passed slice: {:?}", g);
+  let mut h = [42, 42, 42];
+  let mut i = [23, 23];
+  modify_slice_array_enclaved_([&mut h[..], &mut i[..]]);
+  println!("(Un)modified slices: {:?}, {:?}", h, i);
+  let j = [13, 37, 0];
+  let k = [47, 11];
+  let mut l = [&j[..], &k[..]];
+  pass_slice_slice_enclaved_(&mut l[..]);
+  println!("Passed slice slice: {:?}", l);
+
+  let m = get_long_int_enclaved_();
+  println!("Long int: {}", m);
   get_result_enclaved_(1).expect("Did not get OK result");
   println!("Got OK result");
-  take_string_enclaved_(String::from("String into enclave"));
+
+  // This does not work because String is implemented as Vec<u8> and we cannot copy that
+  //take_string_enclaved_(String::from("String into enclave"));
 
   // Uncomment to trigger check cases
   //let z = get_box_enclaved_();

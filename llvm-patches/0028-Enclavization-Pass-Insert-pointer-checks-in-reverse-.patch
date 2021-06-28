@@ -1,7 +1,7 @@
 From 01ebbe68bda7de472af9d6371ac3e210cca1e619 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 19 May 2021 16:43:04 +0000
-Subject: [PATCH 28/29] Enclavization Pass: Insert pointer checks in reverse
+Subject: [PATCH 28/30] Enclavization Pass: Insert pointer checks in reverse
  gates
 
 ---

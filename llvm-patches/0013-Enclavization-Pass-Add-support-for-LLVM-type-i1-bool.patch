@@ -1,7 +1,7 @@
 From e6edd2e4a3a27e389a810c59b38e8eff161d61ad Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 11 May 2021 08:53:42 +0000
-Subject: [PATCH 13/29] Enclavization Pass: Add support for LLVM type i1/bool
+Subject: [PATCH 13/30] Enclavization Pass: Add support for LLVM type i1/bool
  to EDL files
 
 ---
