@@ -53,7 +53,7 @@ pub unsafe fn cadote_copy_to_enclave(untrusted_ptr: *const u8, size: usize) -> *
 
 #[no_mangle]
 pub unsafe fn cadote_map_back_from_enclave(in_ptr_trusted: *const u8, in_size: usize) -> *mut u8 {
-  let memcpy_map = MEMCPY_MAP.as_ref().unwrap();
+  let memcpy_map = MEMCPY_MAP.as_ref().expect("Cannot map back memory without having copied from untrusted input");
 
   for ((candid_ptr_untrusted, candid_size), candid_ptr_trusted) in &*memcpy_map {
     if in_ptr_trusted >= *candid_ptr_trusted {
@@ -70,7 +70,12 @@ pub unsafe fn cadote_map_back_from_enclave(in_ptr_trusted: *const u8, in_size: u
 
 #[no_mangle]
 pub unsafe fn cadote_copy_back_from_enclave() {
-  let memcpy_map = MEMCPY_MAP.as_mut().unwrap();
+  let memcpy_map = match MEMCPY_MAP.as_mut() {
+    Some(m) => m,
+    None => {
+      return;
+    }
+  };
 
   for ((untrusted_ptr, size), trusted_ptr) in &*memcpy_map {
     // TODO: This is very hacky, we need a nicer solution

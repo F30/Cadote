@@ -1,0 +1,170 @@
+From ab6acb114a00edda0f8c2f322689e7dd765aa0f9 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 29 Jun 2021 10:14:58 +0000
+Subject: [PATCH 31/31] Enclavization Pass: Do not copy `sret`-style pointers
+ recursively
+
+Their pointer targets may be unintialized at first.
+---
+ .../Transforms/Utils/Enclavization/CopyMem.h  |  6 +--
+ .../Utils/Enclavization/CopyMem.cpp           | 46 ++++++++++---------
+ .../Utils/Enclavization/Wrappers.cpp          | 10 ++--
+ 3 files changed, 33 insertions(+), 29 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h b/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h
+index 8eb640c4c1ea..0046c514f608 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/CopyMem.h
+@@ -7,11 +7,11 @@
+ 
+ bool probablyIsSlice(llvm::Value *);
+ 
+-llvm::Value *recursiveCopy(llvm::Value *, size_t, llvm::BasicBlock *);
++llvm::Value *recursiveCopy(llvm::Value *, size_t, llvm::BasicBlock *, bool);
+ 
+-llvm::Value *recursiveCopy(llvm::Value *, llvm::Value *, llvm::BasicBlock *);
++llvm::Value *recursiveCopy(llvm::Value *, llvm::Value *, llvm::BasicBlock *, bool);
+ 
+-llvm::Value *recursiveCopy(llvm::Value *, llvm::BasicBlock *);
++llvm::Value *recursiveCopy(llvm::Value *, llvm::BasicBlock *, bool);
+ 
+ llvm::Value *recursiveMapBack(llvm::Value *, size_t, llvm::BasicBlock *);
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp b/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp
+index ccd49ef5acc4..4bf4bf724994 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/CopyMem.cpp
+@@ -39,7 +39,7 @@ bool probablyIsSlice(Value *val) {
+ }
+ 
+ 
+-static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm::BasicBlock *insertionBlock) {
++static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm::BasicBlock *insertionBlock, bool dontRecurse) {
+   Module *mod = insertionBlock->getParent()->getParent();
+   DataLayout dataLayout = mod->getDataLayout();
+ 
+@@ -86,21 +86,23 @@ static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm:
+       insertionBlock
+     );
+ 
+-    // Recursively copy pointer target
+-    if (pointedToType->isPointerTy() || pointedToType->isArrayTy() || pointedToType->isStructTy()) {
+-      Value *pointedToVal = new LoadInst(
+-        pointedToType,
+-        newVal,
+-        "",
+-        insertionBlock
+-      );
+-      Value *copyResult = recursiveCopy(pointedToVal, insertionBlock);
+-      if (copyResult) {
+-        new StoreInst(
+-          copyResult,
++    if (!dontRecurse) {
++      // Recursively copy pointer target
++      if (pointedToType->isPointerTy() || pointedToType->isArrayTy() || pointedToType->isStructTy()) {
++        Value *pointedToVal = new LoadInst(
++          pointedToType,
+           newVal,
++          "",
+           insertionBlock
+         );
++        Value *copyResult = recursiveCopy(pointedToVal, insertionBlock, false);
++        if (copyResult) {
++          new StoreInst(
++            copyResult,
++            newVal,
++            insertionBlock
++          );
++        }
+       }
+     }
+   } else if (origVal->getType()->isArrayTy()) {
+@@ -115,7 +117,7 @@ static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm:
+         "",
+         insertionBlock
+       );
+-      Value *copyResult = recursiveCopy(elem, insertionBlock);
++      Value *copyResult = recursiveCopy(elem, insertionBlock, false);
+       if (copyResult) {
+         arr = InsertValueInst::Create(
+           arr,
+@@ -149,9 +151,9 @@ static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm:
+           "",
+           insertionBlock
+         );
+-        copyResult = recursiveCopy(elem, copyCount, insertionBlock);
++        copyResult = recursiveCopy(elem, copyCount, insertionBlock, false);
+       } else {
+-        copyResult = recursiveCopy(elem, insertionBlock);
++        copyResult = recursiveCopy(elem, insertionBlock, false);
+       }
+ 
+       if (copyResult) {
+@@ -171,15 +173,15 @@ static Value *doRecursiveCopy(Value *origVal, bool sizeKnown, Value *size, llvm:
+ }
+ 
+ 
+-Value *recursiveCopy(Value *origVal, size_t size, llvm::BasicBlock *insertionBlock) {
++Value *recursiveCopy(Value *origVal, size_t size, llvm::BasicBlock *insertionBlock, bool dontRecurse) {
+   Module *mod = insertionBlock->getParent()->getParent();
+   ConstantInt *copySize = ConstantInt::get(USIZE_TYPE(mod->getContext()), size);
+ 
+-  return doRecursiveCopy(origVal, true, copySize, insertionBlock);
++  return doRecursiveCopy(origVal, true, copySize, insertionBlock, dontRecurse);
+ }
+ 
+ 
+-Value *recursiveCopy(Value *origVal, Value *count, llvm::BasicBlock *insertionBlock) {
++Value *recursiveCopy(Value *origVal, Value *count, llvm::BasicBlock *insertionBlock, bool dontRecurse) {
+   Module *mod = insertionBlock->getParent()->getParent();
+   DataLayout dataLayout = mod->getDataLayout();
+   // The function should only ever be relevant for slices
+@@ -201,12 +203,12 @@ Value *recursiveCopy(Value *origVal, Value *count, llvm::BasicBlock *insertionBl
+     insertionBlock
+   );
+ 
+-  return doRecursiveCopy(origVal, true, size, insertionBlock);
++  return doRecursiveCopy(origVal, true, size, insertionBlock, dontRecurse);
+ }
+ 
+ 
+-Value *recursiveCopy(Value *origVal, llvm::BasicBlock *insertionBlock) {
+-  return doRecursiveCopy(origVal, false, nullptr, insertionBlock);
++Value *recursiveCopy(Value *origVal, llvm::BasicBlock *insertionBlock, bool dontRecurse) {
++  return doRecursiveCopy(origVal, false, nullptr, insertionBlock, dontRecurse);
+ }
+ 
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+index bff9ecbc1ee7..74b3b954eec8 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Wrappers.cpp
+@@ -417,19 +417,21 @@ Function *getPostgateImpl(Function *wrappedFunc, EdlFile &edlFile) {
+ 
+   std::vector<Value *> wrappedArgs;
+   for (auto arg = postgateFunc->arg_begin(); arg != postgateFunc->arg_end(); ++arg) {
++    // Prevent copying of uninitialized memory
++    bool disableRecursion = arg->hasAttribute(Attribute::AttrKind::StructRet);
+     Value *copiedArg;
+     if (arg->hasAttribute(Attribute::AttrKind::Dereferenceable)) {
+       uint64_t derefSize = arg->getAttribute(Attribute::AttrKind::Dereferenceable).getValueAsInt();
+-      copiedArg = recursiveCopy(arg, derefSize, postgateBlock);
++      copiedArg = recursiveCopy(arg, derefSize, postgateBlock, disableRecursion);
+     } else if (probablyIsSlice(arg)) {
+       auto nextArg = std::next(arg);
+       if (nextArg != postgateFunc->arg_end() && (nextArg->getType()->isIntegerTy())) {
+-        copiedArg = recursiveCopy(arg, nextArg, postgateBlock);
++        copiedArg = recursiveCopy(arg, nextArg, postgateBlock, disableRecursion);
+       } else {
+-        copiedArg = recursiveCopy(arg, postgateBlock);
++        copiedArg = recursiveCopy(arg, postgateBlock, disableRecursion);
+       }
+     } else {
+-      copiedArg = recursiveCopy(arg, postgateBlock);
++      copiedArg = recursiveCopy(arg, postgateBlock, disableRecursion);
+     }
+ 
+     if (copiedArg) {
+-- 
+2.25.1
+

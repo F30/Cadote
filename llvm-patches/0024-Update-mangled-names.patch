@@ -1,7 +1,7 @@
 From 9f5ff985d768693f5fedc7277c94b6c69eb010f4 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 18 May 2021 17:57:56 +0000
-Subject: [PATCH 24/30] Update mangled names
+Subject: [PATCH 24/31] Update mangled names
 
 ---
  .../Transforms/Utils/Enclavization/EnclaveModify.cpp   | 10 +++++-----

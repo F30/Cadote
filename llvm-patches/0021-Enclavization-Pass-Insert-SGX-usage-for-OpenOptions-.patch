@@ -1,7 +1,7 @@
 From 801d2f4b51e0dad27d8f2febfae4a8b6e9a5fdd2 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Mon, 17 May 2021 15:41:17 +0000
-Subject: [PATCH 21/30] Enclavization Pass: Insert SGX usage for
+Subject: [PATCH 21/31] Enclavization Pass: Insert SGX usage for
  OpenOptions::write() and Read::read_to_end()
 
 ---
