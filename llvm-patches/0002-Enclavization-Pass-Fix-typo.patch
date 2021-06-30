@@ -1,7 +1,7 @@
 From 4c3f864c5e0430b28860f597c5327b800897cf76 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 23 Mar 2021 17:01:48 +0000
-Subject: [PATCH 02/31] Enclavization Pass: Fix typo
+Subject: [PATCH 02/33] Enclavization Pass: Fix typo
 
 ---
  llvm/include/llvm/Transforms/Utils/Enclavization/Names.h | 2 +-

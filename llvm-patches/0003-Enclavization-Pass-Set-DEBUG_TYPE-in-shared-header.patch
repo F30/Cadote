@@ -1,7 +1,7 @@
 From a8ecd1f0fff5ecd6158e4fd88859cd10a414a25a Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 23 Mar 2021 17:37:26 +0000
-Subject: [PATCH 03/31] Enclavization Pass: Set `DEBUG_TYPE` in shared header
+Subject: [PATCH 03/33] Enclavization Pass: Set `DEBUG_TYPE` in shared header
 
 To make it usable in all sources files.
 ---

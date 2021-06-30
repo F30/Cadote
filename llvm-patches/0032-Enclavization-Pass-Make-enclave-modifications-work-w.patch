@@ -1,0 +1,125 @@
+From 37851a4efb9712434b66e80c443db29af5752857 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 30 Jun 2021 11:56:19 +0000
+Subject: [PATCH 32/33] Enclavization Pass: Make enclave modifications work
+ with non-debug Rust builds
+
+---
+ .../Utils/Enclavization/EnclaveModify.h       |  1 +
+ .../Utils/Enclavization/EnclaveModify.cpp     | 58 ++++++++++++++++---
+ 2 files changed, 52 insertions(+), 7 deletions(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+index 0d37b4820136..b24006681a4c 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/EnclaveModify.h
+@@ -26,6 +26,7 @@ class FsCallConverter {
+     void convertFileDrops();
+     void convertBufreaderDrops();
+     void eraseConvertedInstrs();
++    void removeLlvmLifetime(llvm::CallBase *);
+ 
+   private:
+     // Mappings from original sgx_tstd::untrusted::fs type instances to their sgx_tstd::sgxfs counterparts
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index 34b68cd3aadf..8f327103009e 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -582,7 +582,7 @@ void FsCallConverter::convertOpenoptionsOpen(CallBase *origCall) {
+     // (it is "oldTarget")
+     // We cannot find this through the param's users(), since LLVM does not count metadata uses such as
+     // `call void @llvm.dbg.declare(metadata i32* %9, ...)` as uses of the actual value
+-    CallInst *debugCall;
++    CallInst *debugCall = nullptr;
+     for (auto &inst : *successSuccessor) {
+       if (isa<CallInst>(inst)) {
+         CallInst *call = dyn_cast<CallInst>(&inst);
+@@ -592,9 +592,10 @@ void FsCallConverter::convertOpenoptionsOpen(CallBase *origCall) {
+         }
+       }
+     }
+-    assert(debugCall && "Success handler does not have call to llvm.dbg.declare()");
+-    // Debug info gets messed up through our modifications anyway, so we don't care
+-    convertedInstrs.push_back(debugCall);
++    if (debugCall) {
++      // Debug info gets messed up through our modifications anyway, so we don't care
++      convertedInstrs.push_back(debugCall);
++    }
+ 
+     Instruction *entryInst = successSuccessor->getFirstNonPHI();
+     assert(isa<BitCastInst>(entryInst));
+@@ -639,7 +640,7 @@ void FsCallConverter::convertOpenoptionsOpen(CallBase *origCall) {
+         );
+         convertedInstrs.push_back(oldLoad);
+ 
+-        assert(oldLoad->hasNUses(2) && "Result of success load has unexpected usage");
++        assert((oldLoad->hasOneUse() || oldLoad->hasNUses(2)) && "Result of success load has unexpected usage");
+         for (auto oldLoadUser : oldLoad->users()) {
+           assert(isa<StoreInst>(oldLoadUser) && "Result of success load has unexpected usage");
+           StoreInst *oldStore = dyn_cast<StoreInst>(oldLoadUser);
+@@ -913,9 +914,53 @@ void FsCallConverter::eraseConvertedInstrs() {
+ }
+ 
+ 
++void FsCallConverter::removeLlvmLifetime(CallBase *origCall) {
++  std::vector<Value *> lifetimeArgs;
++  for (auto &arg : origCall->args()) {
++    lifetimeArgs.push_back(arg.get());
++  }
++  origCall->eraseFromParent();
++
++  for (auto arg : lifetimeArgs) {
++    if (arg->hasNUses(0)) {
++      if (isa<Instruction>(arg)) {
++        dyn_cast<Instruction>(arg)->eraseFromParent();
++      }
++    }
++  }
++}
++
++
+ void insertSgxUsage(Function *func) {
++  // Remove calls to llvm.lifetime.*() before everything else, because the rest of our code currently
++  // cannot handle them
++  std::vector<CallBase *> lifetimeCalls;
++  for (auto &bblock : *func) {
++    for (auto &inst : bblock) {
++      if (isa<CallBase>(&inst)) {
++        CallBase *call = dyn_cast<CallBase>(&inst);
++        Function *callee = call->getCalledFunction();
++        if (!callee) {
++          // TODO: Indirect calls
++          return;
++        }
++        std::string calleeName = demangleRustName(callee->getName());
++
++        if (strStartsWith(calleeName, "llvm.lifetime.")) {
++          lifetimeCalls.push_back(call);
++        }
++      }
++    }
++  }
++
++  FsCallConverter converter;
++  dbgs() << "Enclave modification: Removing " << lifetimeCalls.size() << " calls to llvm.lifetime.*()\n";
++
++  for (auto call : lifetimeCalls) {
++    converter.removeLlvmLifetime(call);
++  }
++
+   std::vector<CallBase *> calls;
+-
+   for (auto &bblock : *func) {
+     for (auto &inst : bblock) {
+       if (isa<CallBase>(&inst)) {
+@@ -925,7 +970,6 @@ void insertSgxUsage(Function *func) {
+   }
+ 
+   dbgs() << "Enclave modification: Starting conversions in function " << func->getName() << "\n";
+-  FsCallConverter converter;
+ 
+   for (auto call : calls) {
+     Module *mod = call->getModule();
+-- 
+2.25.1
+

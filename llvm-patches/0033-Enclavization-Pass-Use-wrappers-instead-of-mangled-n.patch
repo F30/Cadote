@@ -1,0 +1,177 @@
+From 650d0cd60a154f2cc9ad2b63a555211cafbdb6dd Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 30 Jun 2021 13:07:20 +0000
+Subject: [PATCH 33/33] Enclavization Pass: Use wrappers instead of mangled
+ names in enclave modifications
+
+---
+ .../Utils/Enclavization/EnclaveModify.cpp     | 52 +++++++++----------
+ 1 file changed, 26 insertions(+), 26 deletions(-)
+
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+index 8f327103009e..2bf7d59c4aae 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp
+@@ -101,26 +101,26 @@ static StructType *getBufreaderSgxfileType(Module *mod) {
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_NEW_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions3new17hd1e80d08f14e9f75E"
++#define CADOTE_OPENOPTIONS_NEW_NAME "cadote_sgxfs_openoptions_new"
+ 
+-static Function *getSgxfsOpenoptionsNewDecl(Module *mod) {
+-  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_NEW_NAME);
++static Function *getCadoteOpenoptionsNewDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_OPENOPTIONS_NEW_NAME);
+   if (func) {
+     // Function has already been declared (in previous calls)
+     return func;
+   }
+ 
+   FunctionType *funcType = FunctionType::get(Type::getIntNTy(mod->getContext(), 40), false);
+-  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_NEW_NAME, mod);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_OPENOPTIONS_NEW_NAME, mod);
+ 
+   return func;
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_READ_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions4read17h110ab21457ce6e1fE"
++#define CADOTE_OPENOPTIONS_READ_NAME "cadote_sgxfs_openoptions_read"
+ 
+-static Function *getSgxfsOpenoptionsReadDecl(Module *mod) {
+-  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_READ_NAME);
++static Function *getCadoteOpenoptionsReadDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_OPENOPTIONS_READ_NAME);
+   if (func) {
+     return func;
+   }
+@@ -128,16 +128,16 @@ static Function *getSgxfsOpenoptionsReadDecl(Module *mod) {
+   Type *openOptionsPtrType = getSgxfsOpenoptionsType(mod)->getPointerTo();
+   Type *argTypes[] = { openOptionsPtrType, Type::getInt1Ty(mod->getContext()) };
+   FunctionType *funcType = FunctionType::get(openOptionsPtrType, argTypes, false);
+-  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_READ_NAME, mod);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_OPENOPTIONS_READ_NAME, mod);
+ 
+   return func;
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_WRITE_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions5write17h22d925a63b24b91bE"
++#define CADOTE_OPENOPTIONS_WRITE_NAME "cadote_sgxfs_openoptions_write"
+ 
+-static Function *getSgxfsOpenoptionsWriteDecl(Module *mod) {
+-  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_WRITE_NAME);
++static Function *getCadoteOpenoptionsWriteDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_OPENOPTIONS_WRITE_NAME);
+   if (func) {
+     return func;
+   }
+@@ -145,16 +145,16 @@ static Function *getSgxfsOpenoptionsWriteDecl(Module *mod) {
+   Type *openOptionsPtrType = getSgxfsOpenoptionsType(mod)->getPointerTo();
+   Type *argTypes[] = { openOptionsPtrType, Type::getInt1Ty(mod->getContext()) };
+   FunctionType *funcType = FunctionType::get(openOptionsPtrType, argTypes, false);
+-  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_WRITE_NAME, mod);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_OPENOPTIONS_WRITE_NAME, mod);
+ 
+   return func;
+ }
+ 
+ 
+-#define MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME "_ZN8sgx_tstd5sgxfs11OpenOptions6append17hd2be1b734db32c6aE"
++#define CADOTE_OPENOPTIONS_APPEND_NAME "cadote_sgxfs_openoptions_append"
+ 
+-static Function *getSgxfsOpenoptionsAppendDecl(Module *mod) {
+-  Function *func = mod->getFunction(MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME);
++static Function *getCadoteOpenoptionsAppendDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_OPENOPTIONS_APPEND_NAME);
+   if (func) {
+     return func;
+   }
+@@ -162,7 +162,7 @@ static Function *getSgxfsOpenoptionsAppendDecl(Module *mod) {
+   Type *openOptionsPtrType = getSgxfsOpenoptionsType(mod)->getPointerTo();
+   Type *argTypes[] = { openOptionsPtrType, Type::getInt1Ty(mod->getContext()) };
+   FunctionType *funcType = FunctionType::get(openOptionsPtrType, argTypes, false);
+-  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_SGXFS_OPENOPTIONS_APPEND_NAME, mod);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_OPENOPTIONS_APPEND_NAME, mod);
+ 
+   return func;
+ }
+@@ -252,10 +252,10 @@ static Function *getCadoteSgxfileReadtoendDecl(Module *mod, Type *usizeResultTyp
+ }
+ 
+ 
+-#define MANGLED_IO_WRITE_WRITEALL_NAME "_ZN8sgx_tstd2io5Write9write_all17h9469b32eef1f7433E"
++#define CADOTE_SGXFILE_WRITEALL_NAME "cadote_sgxfs_sgxfile_writeall"
+ 
+-static Function *getFileWriteallDecl(Module *mod) {
+-  Function *func = mod->getFunction(MANGLED_IO_WRITE_WRITEALL_NAME);
++static Function *getCadoteSgxfileWriteallDecl(Module *mod) {
++  Function *func = mod->getFunction(CADOTE_SGXFILE_WRITEALL_NAME);
+   if (func) {
+     return func;
+   }
+@@ -266,7 +266,7 @@ static Function *getFileWriteallDecl(Module *mod) {
+     Type::getInt64Ty(mod->getContext())
+   };
+   FunctionType *funcType = FunctionType::get(Type::getInt128Ty(mod->getContext()), argTypes, false);
+-  func = Function::Create(funcType, Function::ExternalLinkage, MANGLED_IO_WRITE_WRITEALL_NAME, mod);
++  func = Function::Create(funcType, Function::ExternalLinkage, CADOTE_SGXFILE_WRITEALL_NAME, mod);
+ 
+   return func;
+ }
+@@ -322,13 +322,13 @@ void FsCallConverter::convertOpenoptionsNew(CallBase *origCall) {
+ 
+   // Create this first, because it needs to be passed an insertion position
+   AllocaInst *openoptionsAlloc = new AllocaInst(
+-    getSgxfsOpenoptionsNewDecl(mod)->getReturnType(),
++    getCadoteOpenoptionsNewDecl(mod)->getReturnType(),
+     0,
+     "",
+     origCall
+   );
+   CallInst *newCall = CallInst::Create(
+-    getSgxfsOpenoptionsNewDecl(mod),
++    getCadoteOpenoptionsNewDecl(mod),
+     "",
+     origCall
+   );
+@@ -412,7 +412,7 @@ void FsCallConverter::convertOpenoptionsRead(CallBase *origCall) {
+   Value *newArgs[] = { newArg0, origCall->getArgOperand(1) };
+ 
+   CallInst *newCall = CallInst::Create(
+-    getSgxfsOpenoptionsReadDecl(mod),
++    getCadoteOpenoptionsReadDecl(mod),
+     newArgs,
+     "",
+     origCall
+@@ -433,7 +433,7 @@ void FsCallConverter::convertOpenoptionsWrite(CallBase *origCall) {
+   Value *newArgs[] = { newArg0, origCall->getArgOperand(1) };
+ 
+   CallInst *newCall = CallInst::Create(
+-    getSgxfsOpenoptionsWriteDecl(mod),
++    getCadoteOpenoptionsWriteDecl(mod),
+     newArgs,
+     "",
+     origCall
+@@ -454,7 +454,7 @@ void FsCallConverter::convertOpenoptionsAppend(CallBase *origCall) {
+   Value *newArgs[] = { newArg0, origCall->getArgOperand(1) };
+ 
+   CallInst *newCall = CallInst::Create(
+-    getSgxfsOpenoptionsAppendDecl(mod),
++    getCadoteOpenoptionsAppendDecl(mod),
+     newArgs,
+     "",
+     origCall
+@@ -816,7 +816,7 @@ void FsCallConverter::converFileWriteall(CallBase *origCall) {
+   InvokeInst *oldInvoke = dyn_cast<InvokeInst>(origCall);
+ 
+   InvokeInst *newInvoke = InvokeInst::Create(
+-    getFileWriteallDecl(mod),
++    getCadoteSgxfileWriteallDecl(mod),
+     oldInvoke->getNormalDest(),
+     oldInvoke->getUnwindDest(),
+     newArgs,
+-- 
+2.25.1
+

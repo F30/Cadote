@@ -1,7 +1,7 @@
 From 4c4aec924eaff0544c1fd2a6a1c48f24a760688f Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Fri, 16 Apr 2021 14:59:51 +0000
-Subject: [PATCH 09/31] Enclavization Pass: Add support for structs to EDL
+Subject: [PATCH 09/33] Enclavization Pass: Add support for structs to EDL
  export
 
 ---

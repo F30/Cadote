@@ -7,6 +7,7 @@ use std::prelude::v1::*;
 use std::collections::HashMap;
 use std::io::Read;
 use std::io::BufRead;
+use std::io::Write;
 use std::ptr;
 
 use sgx_libc;
@@ -111,6 +112,38 @@ pub fn cadote_enclave_error_handler() -> ! {
 }
 
 /*
+ * Wrapper around sgx_tstd::sgxfs::OpenOptions::new() to avoid name mangling issues.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_openoptions_new() -> sgxfs::OpenOptions {
+  sgxfs::OpenOptions::new()
+}
+
+/*
+ * Wrapper around sgx_tstd::sgxfs::OpenOptions::read() to avoid name mangling issues.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_openoptions_read(openopts: &mut sgxfs::OpenOptions, read: bool) -> &mut sgxfs::OpenOptions {
+  openopts.read(read)
+}
+
+/*
+ * Wrapper around sgx_tstd::sgxfs::OpenOptions::write() to avoid name mangling issues.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_openoptions_write(openopts: &mut sgxfs::OpenOptions, write: bool) -> &mut sgxfs::OpenOptions {
+  openopts.write(write)
+}
+
+/*
+ * Wrapper around sgx_tstd::sgxfs::OpenOptions::append() to avoid name mangling issues.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_openoptions_append(openopts: &mut sgxfs::OpenOptions, append: bool) -> &mut sgxfs::OpenOptions {
+  openopts.append(append)
+}
+
+/*
  * Non-generic version of sgx_tstd::sgxfs::OpenOptions::open() to avoid monomorphization hassle.
  */
 #[no_mangle]
@@ -126,6 +159,14 @@ pub fn cadote_sgxfs_openoptions_open(openopts: &sgxfs::OpenOptions, path: &str) 
 #[no_mangle]
 pub fn cadote_sgxfs_sgxfile_readtoend(file: &mut sgxfs::SgxFile, buf: &mut Vec<u8>) -> sgx_tstd::io::Result<usize> {
   file.read_to_end(buf)
+}
+
+/*
+ * Wrapper around sgx_tstd::sgxfs::SgxFile::write_all() to avoid name mangling issues.
+ */
+#[no_mangle]
+pub fn cadote_sgxfs_sgxfile_writeall(file: &mut sgxfs::SgxFile, buf: &[u8]) -> sgx_tstd::io::Result<()> {
+  file.write_all(buf)
 }
 
 /*

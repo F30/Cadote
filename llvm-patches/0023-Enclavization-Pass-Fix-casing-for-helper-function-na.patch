@@ -1,7 +1,7 @@
 From d954ce2237e81687fdb484a1474c7356df8d1488 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 18 May 2021 10:40:37 +0000
-Subject: [PATCH 23/31] Enclavization Pass: Fix casing for helper function name
+Subject: [PATCH 23/33] Enclavization Pass: Fix casing for helper function name
 
 ---
  llvm/include/llvm/Transforms/Utils/Enclavization/Support.h | 2 +-

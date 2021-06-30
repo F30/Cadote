@@ -1,0 +1,75 @@
+From 681371a3d75e69163bd1240c146862434cf057cf Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Tue, 29 Jun 2021 14:55:28 +0000
+Subject: [PATCH 4/4] Use separate PassManager for extra LLVM passes
+
+We want our custom passes to run before other optimizations.
+---
+ compiler/rustc_codegen_llvm/src/back/write.rs | 23 ++++++++++---------
+ 1 file changed, 12 insertions(+), 11 deletions(-)
+
+diff --git a/compiler/rustc_codegen_llvm/src/back/write.rs b/compiler/rustc_codegen_llvm/src/back/write.rs
+index ea1a7cfa5d3..2e39fb4b878 100644
+--- a/compiler/rustc_codegen_llvm/src/back/write.rs
++++ b/compiler/rustc_codegen_llvm/src/back/write.rs
+@@ -494,6 +494,7 @@ pub(crate) unsafe fn optimize(
+         // does, and are by populated by LLVM's default PassManagerBuilder.
+         // Each manager has a different set of passes, but they also share
+         // some common passes.
++        let xpm = llvm::LLVMCreatePassManager();
+         let fpm = llvm::LLVMCreateFunctionPassManagerForModule(llmod);
+         let mpm = llvm::LLVMCreatePassManager();
+ 
+@@ -543,11 +544,6 @@ pub(crate) unsafe fn optimize(
+                     || cgcx.lto == Lto::ThinLocal
+                     || (cgcx.lto != Lto::Fat && cgcx.opts.cg.linker_plugin_lto.enabled());
+                 with_llvm_pmb(llmod, &config, opt_level, prepare_for_thin_lto, &mut |b| {
+-                    llvm::LLVMRustAddLastExtensionPasses(
+-                        b,
+-                        extra_passes.as_ptr(),
+-                        extra_passes.len() as size_t,
+-                    );
+                     llvm::LLVMPassManagerBuilderPopulateFunctionPassManager(b, fpm);
+                     llvm::LLVMPassManagerBuilderPopulateModulePassManager(b, mpm);
+                 });
+@@ -557,12 +553,9 @@ pub(crate) unsafe fn optimize(
+                     llvm::LLVMRustAddPass(mpm, find_pass("name-anon-globals").unwrap());
+                     have_name_anon_globals_pass = true;
+                 }
+-            } else {
+-                // If we don't use the standard pipeline, directly populate the MPM
+-                // with the extra passes.
+-                for pass in extra_passes {
+-                    llvm::LLVMRustAddPass(mpm, pass);
+-                }
++            }
++            for pass in extra_passes {
++                llvm::LLVMRustAddPass(xpm, pass);
+             }
+ 
+             if using_thin_buffers && !have_name_anon_globals_pass {
+@@ -586,6 +579,13 @@ pub(crate) unsafe fn optimize(
+         diag_handler.abort_if_errors();
+ 
+         // Finally, run the actual optimization passes
++        {
++            let _timer = cgcx.prof.extra_verbose_generic_activity(
++                "LLVM_module_optimize_extra_passes",
++                &module.name[..],
++            );
++            llvm::LLVMRunPassManager(xpm, llmod);
++        }
+         {
+             let _timer = cgcx.prof.extra_verbose_generic_activity(
+                 "LLVM_module_optimize_function_passes",
+@@ -602,6 +602,7 @@ pub(crate) unsafe fn optimize(
+         }
+ 
+         // Deallocate managers that we're now done with
++        llvm::LLVMDisposePassManager(xpm);
+         llvm::LLVMDisposePassManager(fpm);
+         llvm::LLVMDisposePassManager(mpm);
+     }
+-- 
+2.25.1
+

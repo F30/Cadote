@@ -1,7 +1,7 @@
 From cc9581f8e19bc4ad7a27a94de67af31cb1861f24 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 18 May 2021 17:58:48 +0000
-Subject: [PATCH 25/31] Enclavization Pass: Add support for untrusted functions
+Subject: [PATCH 25/33] Enclavization Pass: Add support for untrusted functions
  to EDL file export
 
 ---

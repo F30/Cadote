@@ -1,7 +1,7 @@
 From 89f0a6bfe8dbff4cff7ea0416e41ebacf1a4db42 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 28 Apr 2021 12:00:35 +0000
-Subject: [PATCH 3/3] Add build config for Cadote
+Subject: [PATCH 3/4] Add build config for Cadote
 
 Now that we keep maintain Rust patches, we might as well commit that
 config.

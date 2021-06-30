@@ -1,7 +1,7 @@
 From 919e36314bcfe4af5e5d0d632260729668f3bb71 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 6 Apr 2021 07:45:48 +0000
-Subject: [PATCH 05/31] Enclavization Passes: Use exception for error handling
+Subject: [PATCH 05/33] Enclavization Passes: Use exception for error handling
 
 LLVM needs to be compiled with `-DLLVM_ENABLE_EH=ON`.
 ---

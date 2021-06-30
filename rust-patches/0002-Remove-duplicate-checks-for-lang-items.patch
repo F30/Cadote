@@ -1,7 +1,7 @@
 From 0198bf270d06420f138289325ca7d38a5e2484da Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 28 Apr 2021 11:54:11 +0000
-Subject: [PATCH 2/3] Remove duplicate checks for lang items
+Subject: [PATCH 2/4] Remove duplicate checks for lang items
 
 This caused issue when compiling code as library for SGX in Cadote.
 Not really sure about the consequences, but I suspect duplicate items
