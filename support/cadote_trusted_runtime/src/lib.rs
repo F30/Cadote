@@ -87,13 +87,15 @@ pub unsafe fn cadote_copy_back_from_enclave() {
   };
 
   for ((untrusted_ptr, size), trusted_ptr) in &*copy_map {
-    // TODO: This is very hacky, we need a nicer solution
-    if *untrusted_ptr as usize >= 0x700000000000 {
+    // We should not copy if untrusted_ptr is read-only (from the text segment)
+    // This is hard to identify, so we look at memory equality instead: The enclave code may still modify
+    // the memory, but then it is OK if the program segfaults here
+    if ! raw_memcmp(*trusted_ptr, *untrusted_ptr, *size) {
       std::ptr::copy_nonoverlapping(*trusted_ptr, *untrusted_ptr, *size);
-      // TODO: Releasing memory at the end of a postgate function should be safe in most cases
-      // But: There will be problems with nested ECALLs
-      sgx_libc::free(*trusted_ptr as *mut sgx_libc::c_void);
     }
+    // TODO: Releasing memory at the end of a postgate function should be safe in most cases
+    // But: There will be problems with nested ECALLs
+    sgx_libc::free(*trusted_ptr as *mut sgx_libc::c_void);
   }
   copy_map.clear();
 }
@@ -150,9 +152,7 @@ pub unsafe fn cadote_copy_back_from_app() {
   };
 
   for ((trusted_ptr, size), untrusted_ptr) in &*copy_map {
-    // We should not copy if trusted_ptr is read-only (from the text segment)
-    // This is hard to identify, so we look at memory equality instead: The untrusted code may still modify
-    // the memory, but then it is OK if the program segfaults here
+    // We should not copy if trusted_ptr is read-only (from the text segment), see above
     if ! raw_memcmp(*untrusted_ptr, *trusted_ptr, *size){
       std::ptr::copy_nonoverlapping(*untrusted_ptr, *trusted_ptr, *size);
     }
