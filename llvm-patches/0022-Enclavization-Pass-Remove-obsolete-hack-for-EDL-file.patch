@@ -1,7 +1,7 @@
 From 98801ecf23270afe6e6faac92e6cfeece4e943b9 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 18 May 2021 10:36:02 +0000
-Subject: [PATCH 22/33] Enclavization Pass: Remove obsolete hack for EDL file
+Subject: [PATCH 22/34] Enclavization Pass: Remove obsolete hack for EDL file
  generation
 
 The comment about safety does not apply anymore, since our Postgate

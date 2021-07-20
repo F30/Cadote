@@ -1,7 +1,7 @@
 From 9dec692c3390434d376bf839e2e6d6e32f3f2af0 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 19 May 2021 14:31:12 +0000
-Subject: [PATCH 27/33] Enclavization Pass: Fix EDL file export for reverse
+Subject: [PATCH 27/34] Enclavization Pass: Fix EDL file export for reverse
  gates
 
 ---

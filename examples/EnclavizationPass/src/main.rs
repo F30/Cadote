@@ -91,6 +91,49 @@ fn get_result_enclaved_(i: i64) -> Result<(), i64> {
   }
 }
 
+fn reverse_get_array() -> [i64; 20] {
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+}
+
+fn reverse_get_struct() -> User {
+  User {
+    sign_in_count: 14,
+    active: false
+  }
+}
+
+fn reverse_take_tuple_ref(param: &(i64, i64, i64)) {
+  println!("The passed-by-reference tuple is: {:?}", param);
+}
+
+fn reverse_modify_array_ref(param: &mut[i64; 3]) {
+  param[2] = 33;
+}
+
+fn reverse_modify_slice_array_ref(param: &mut [&mut [i64]; 1]) {
+  param[0][1] = -100;
+}
+
+fn reverse_pass_slice(param: &str) -> &str {
+  &param[0..3]
+}
+
+fn do_reverse_calls_enclaved_(param: &mut [i64]) {
+  let a = reverse_get_array();
+  println!("Reverse array: {:?}", a);
+  let b = reverse_get_struct();
+  println!("Reverse struct: {:?}", b);
+  let c = (23, 42, 100);
+  reverse_take_tuple_ref(&c);
+  let mut d = [1, 2, 3];
+  reverse_modify_array_ref(&mut d);
+  println!("Array after modification: {:?}", d);
+  let mut e = [param];
+  reverse_modify_slice_array_ref(&mut e);
+  let f = reverse_pass_slice("ABCDEFGH");
+  println!("Reverse-passed slice: {}", f);
+}
+
 #[allow(dead_code)]
 fn take_string_enclaved_(s: String) {
   println!("Got string: {}", s);
@@ -204,6 +247,10 @@ fn main() {
   println!("Long int: {}", m);
   get_result_enclaved_(1).expect("Did not get OK result");
   println!("Got OK result");
+
+  let mut n = [0, 0, 0];
+  do_reverse_calls_enclaved_(&mut n);
+  println!("Modified slice after back and forth to and from enclave: {:?}", n)
 
   // This does not work because String is implemented as Vec<u8> and we cannot copy that
   //take_string_enclaved_(String::from("String into enclave"));

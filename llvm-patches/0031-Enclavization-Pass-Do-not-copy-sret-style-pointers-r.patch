@@ -1,7 +1,7 @@
 From ab6acb114a00edda0f8c2f322689e7dd765aa0f9 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 29 Jun 2021 10:14:58 +0000
-Subject: [PATCH 31/33] Enclavization Pass: Do not copy `sret`-style pointers
+Subject: [PATCH 31/34] Enclavization Pass: Do not copy `sret`-style pointers
  recursively
 
 Their pointer targets may be unintialized at first.

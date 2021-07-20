@@ -1,7 +1,7 @@
 From 05fac54e18b2d7de103daaefe81461b77291c499 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Fri, 21 May 2021 14:02:00 +0000
-Subject: [PATCH 29/33] Enclavization Pass: Do not adopt `dereferencable`
+Subject: [PATCH 29/34] Enclavization Pass: Do not adopt `dereferencable`
  attributes for `sret` arguments
 
 This could not work, since the attribute is valid for the original
