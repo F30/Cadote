@@ -27,7 +27,7 @@ use ring::{
 };
 use ring::signature::{
   KeyPair,
-  ED25519_PUBLIC_KEY_LEN
+  Ed25519KeyPair
 };
 
 #[cfg(feature = "enclavization_bin")]
@@ -94,43 +94,32 @@ fn main() {
 
 fn gen_key_enclaved_(privkey_filename: &str, pubkey_filename: &str) -> Result<(), Error> {
   let rng = rand::SystemRandom::new();
-  let key_doc = signature::Ed25519KeyPair::generate_pkcs8(&rng)?;
+  let key_doc = Ed25519KeyPair::generate_pkcs8(&rng)?;
 
   // TODO: Would like to use create_new(), but that is unsupported when automatically converting to
   // sgxfs::OpenOptions through Enclavization Pass
   let mut private_key_file = fs::OpenOptions::new().create(true).write(true).open(privkey_filename)?;
   private_key_file.write_all(key_doc.as_ref())?;
 
-  let key_pair = signature::Ed25519KeyPair::from_pkcs8(key_doc.as_ref()).unwrap();
-  let mut public_key_raw = get_untrusted_pubkey_mem();
-  (*public_key_raw).copy_from_slice(key_pair.public_key().as_ref());
-  store_public_key(public_key_raw, pubkey_filename)?;
+  let key_pair = Ed25519KeyPair::from_pkcs8(key_doc.as_ref()).unwrap();
+  store_public_key(key_pair.public_key(), pubkey_filename)?;
 
   Ok(())
 }
 
-/*
- * Work-around for automatic enclavization, which demonstrates the limits of automatically inserting
- * reverse calls: We cannot pass trusted memory from the enclave to store_public_key(). So we manually
- * allocate untrusted memory and copy public key data there.
- */
-fn get_untrusted_pubkey_mem() -> Box<[u8; ED25519_PUBLIC_KEY_LEN]> {
-  Box::new([0; ED25519_PUBLIC_KEY_LEN])
-}
-
-fn store_public_key(public_key: Box<[u8; ED25519_PUBLIC_KEY_LEN]>, filename: &str) -> Result<(), Error> {
+fn store_public_key(public_key: &<Ed25519KeyPair as KeyPair>::PublicKey, filename: &str) -> Result<(), Error> {
   let mut public_key_file = fs::OpenOptions::new().create_new(true).write(true).open(filename)?;
-  public_key_file.write_all(&*public_key)?;
+  public_key_file.write_all(public_key.as_ref())?;
 
   Ok(())
 }
 
-fn load_private_key_enclaved_(filename: &str) -> Result<signature::Ed25519KeyPair, Error> {
+fn load_private_key_enclaved_(filename: &str) -> Result<Ed25519KeyPair, Error> {
   let mut key_file = fs::OpenOptions::new().read(true).open(filename)?;
   let mut key_bytes = Vec::new();
   key_file.read_to_end(&mut key_bytes)?;
 
-  let key_pair = signature::Ed25519KeyPair::from_pkcs8(&key_bytes)?;
+  let key_pair = Ed25519KeyPair::from_pkcs8(&key_bytes)?;
   Ok(key_pair)
 }
 
