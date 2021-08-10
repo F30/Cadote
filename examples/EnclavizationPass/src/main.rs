@@ -250,7 +250,7 @@ fn main() {
 
   let mut n = [0, 0, 0];
   do_reverse_calls_enclaved_(&mut n);
-  println!("Modified slice after back and forth to and from enclave: {:?}", n)
+  println!("Modified slice after back and forth to and from enclave: {:?}", n);
 
   // This does not work because String is implemented as Vec<u8> and we cannot copy that
   //take_string_enclaved_(String::from("String into enclave"));
