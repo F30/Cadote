@@ -20,6 +20,7 @@ extern crate cadote_untrusted_runtime;
 use std::fs;
 use std::io::Read;
 use std::io::Write;
+use std::time::Instant;
 
 use ring::{
   rand,
@@ -70,6 +71,8 @@ fn main() {
     process::exit(exitcode::USAGE);
   }
 
+  let beginstant = Instant::now();
+
   if args[1] == "genkey" {
     gen_key_enclaved_(PRIVATE_KEY_FILENAME, PUBLIC_KEY_FILENAME).expect("Key generation failed");
   } else if args[1] == "sign" {
@@ -90,6 +93,7 @@ fn main() {
     eprintln!("Usage: maxisign <genkey | sign | verify <sig-file>>");
     process::exit(exitcode::USAGE);
   }
+  eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_micros());
 }
 
 fn gen_key_enclaved_(privkey_filename: &str, pubkey_filename: &str) -> Result<(), Error> {
