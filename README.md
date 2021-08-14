@@ -5,6 +5,26 @@ This is the code for my Masters Thesis. It is quite hacky research-grade code, w
 
 For details on the idea and its limitations, read the actual thesis.
 
+Contents
+--------
+* "examples" contains sample code using our implementation.
+  * "EnclavizationPass" is a test program for all kinds of parameter passing to/from enclaved functions.
+  * "IndirectionPass" contains sample code for "llvm-pass" (see below).
+  * "maxisign" is an example for creating and validating signatures with a key bound to an enclave.
+  * "password_check" is an example for checking passwords against values stored bound to an enclave.
+* "llvm-pass" was a first PoC for an LLVM pass wrapping functions.
+* "llvm-patches" contains patches (in `git format-patch` format) for the [rust-lang/llvm-project](https://github.com/rust-lang/llvm-project) repository, branch "rustc/11.0-2020-10-12". Large parts of Cadote's implementation live in here.
+* "rust-enclave" was a first PoC for an enclave written in Rust.
+* "rust-patches" contains patches (in `git format-patch` format) for the [rust-lang/rust](https://github.com/rust-lang/rust) repository, version nightly-2020-10-25 (commit "ffa2e7ae8", used by Teaclave SGX SDK 1.1.3).
+* "support" contains helper code for the Cadote build
+  * "cadote_\*_runtime" are Cadote's runtime libraries. This is the other major part of the Cadote implemenetation.
+  * "build.rs" ensures the linking of untrusted applications to SGX bridges and proxies.
+  * "enclave-config.xml" is config for Intel's SGX build tooling.
+  * "enclave.lds" is a linker script as recommended by Intel.
+
+### Evaluation
+The code and tools used to perform performance evaluation for the thesis are provided on the "eval" branch of this repository.
+
 Setup
 -----
 ### System
@@ -31,13 +51,9 @@ The tooling consists of three parts:
 A custom build of LLVM is required.
 For this, you have to get the right version of Rust's LLVM fork and apply Cadote's patches:
 
-1. Clone the [rust-lang/llvm](https://github.com/rust-lang/llvm-project) repository.
+1. Clone the [rust-lang/llvm-project](https://github.com/rust-lang/llvm-project) repository.
 2. Check out the correct branch for our Rust release, which is "rustc/11.0-2020-10-12".
-3. Apply the patches by running:
-   ```
-   git am <repo-path>/llvm-patches/*
-   ```
-   (Where `<repo-path>` is the working copy of this very repository.)
+3. Apply the patches by running `git am <repo-path>/llvm-patches/*`, where `<repo-path>` is the working copy of this very repository.
 4. CMake and a basic C++ compiler toolchain (Debian package "build-essential") are required.
 5. Create a "build" directory within your working copy of the LLVM repo and change to it.
 6. Configure using:
@@ -60,12 +76,8 @@ We also need a custom build of the Rust compiler.
 That depends on the custom LLVM build, so you have to perform the steps from above before these:
 
 1. Clone the [rust-lang/rust](https://github.com/rust-lang/rust) repository.
-2. Check out commit "ffa2e7ae8" (version nightly-2020-10-25, which is used by Teaclave SGX SDK 1.1.3).
-3. Apply the patches by running:
-   ```
-   git am <repo-path>/rust-patches/*
-   ```
-   (Where `<repo-path>` is the working copy of this very repository.)
+2. Check out commit "ffa2e7ae8" (version nightly-2020-10-25).
+3. Apply the patches by running `git am <repo-path>/rust-patches/*`, where `<repo-path>` is the working copy of this very repository.
 4. Build by running `./x.py build -i library/std`.
 5. The common way to use that build is through [rustup](https://rustup.rs). To do that, add a custom toolchain:
    ```
