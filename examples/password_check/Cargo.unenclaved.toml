@@ -1,0 +1,14 @@
+[package]
+name = "password_check"
+version = "0.0.1"
+authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
+edition = "2018"
+
+[features]
+enclavization_bin = []
+
+[dependencies]
+cadote_untrusted_runtime = { path = "../../support/cadote_untrusted_runtime" }
+hex = "0.4.0"
+ring = "0.16.20"
+rustyline = "8.0.0"

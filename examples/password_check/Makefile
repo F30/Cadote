@@ -17,10 +17,10 @@ app_bin_file = build/$(project_name)
 
 #### Rust Settings ####
 project_name := password_check
-build_mode := debug
-#build_mode := release
+BUILD_MODE ?= debug
+#BUILD_MODE ?= release
 
-ifeq ($(build_mode), release)
+ifeq ($(BUILD_MODE), release)
 CARGO_BUILD_FLAGS := $(CARGO_BUILD_FLAGS) --release
 endif
 
@@ -115,7 +115,7 @@ $(enclave_lib_file) $(enclave_edl_file): $(shell find src/ -type f -name '*.rs')
 	rm Cargo.toml
 	@echo "Cargo  =>  $(enclave_lib_file)"
 	mkdir -p $(enclave_build_dir)
-	cp -f build/cargo_lib_target/$(build_mode)/lib$(project_name).a $(enclave_lib_file)
+	cp -f build/cargo_lib_target/$(BUILD_MODE)/lib$(project_name).a $(enclave_lib_file)
 	mv -f enclave.edl $(enclave_edl_file)
 
 $(enclave_build_dir)/enclave_t.o: $(enclave_stub_files)
@@ -159,4 +159,4 @@ $(app_bin_file): $(app_stub_lib_file) $(shell find src/ -type f -name '*.rs') Ca
 	#SGX_SDK=$(SGX_SDK) CARGO_TARGET_DIR=build/cargo_bin_target MAIN_CRATE_NAME=$(project_name) $(CARGO) rustc $(CARGO_BUILD_FLAGS) --features=enclavization_bin -- -C passes=enclavization-bin-pass -C codegen-units=1 2>build/output
 	rm Cargo.toml
 	@echo "Cargo  =>  $@"
-	cp -f build/cargo_bin_target/$(build_mode)/$(project_name) $@
+	cp -f build/cargo_bin_target/$(BUILD_MODE)/$(project_name) $@

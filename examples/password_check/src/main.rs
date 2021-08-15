@@ -23,6 +23,7 @@ use std::fs;
 use std::num::NonZeroU32;
 use std::io::Error as IOError;
 use std::io::Write;
+use std::time::Instant;
 
 use hex;
 use ring::{digest, pbkdf2};
@@ -52,6 +53,7 @@ fn main() {
 // Additional guard macro, see above
 #[cfg(feature = "enclavization_bin")]
 fn initial_root_prompt() {
+  let beginstant = Instant::now();
   println!("No users available, creating root user...");
 
   let mut rl = rustyline::Editor::<()>::new();
@@ -59,6 +61,7 @@ fn initial_root_prompt() {
 
   store_user_enclaved_ioresult_unit_("root", &password).expect("Could not write user to file");
   println!("Stored.");
+  eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_micros());
   admin_loop();
 }
 
@@ -69,6 +72,7 @@ fn login_prompt() {
   let mut username: String;
   let mut password: String;
 
+  let beginstant = Instant::now();
   loop {
     println!("Please authenticate!");
 
@@ -84,7 +88,9 @@ fn login_prompt() {
 
   println!("🎉 Authenticated successfully!");
 
-  if username == "root" {
+  if username != "root" {
+    eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_micros());
+  } else {
     println!();
     admin_loop();
   }
@@ -111,6 +117,7 @@ fn admin_loop() {
     if command == "q" {
       return;
     } else if command == "a" {
+      let beginstant = Instant::now();
       let username = get_line_or_exit(&mut rl, "Username: ");
       let password = get_line_or_exit(&mut rl, "Password: ");
 
@@ -118,7 +125,8 @@ fn admin_loop() {
         println!("Invalid input, NOT stored!");
       } else {
         store_user_enclaved_ioresult_unit_(&username, &password).expect("Could not write user to file");
-        println!("Stored.")
+        println!("Stored.");
+        eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_micros());
       }
       println!();
     }
