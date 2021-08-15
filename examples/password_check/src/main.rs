@@ -93,7 +93,9 @@ fn admin_loop() {
   loop {
     println!("Add user (a) or quit (q)?");
     let command = match rl.readline("> ") {
-      Ok(l) => l,
+      // If stdin is not a TTY, readline() will include trailing newlines:
+      // https://github.com/kkawakam/rustyline/issues/532
+      Ok(l) => String::from(l.trim_end()),
       Err(rustyline::error::ReadlineError::Eof) => { return; },
       Err(rustyline::error::ReadlineError::Interrupted) => { return; },
       Err(e) => {
@@ -122,7 +124,7 @@ fn admin_loop() {
 #[cfg(feature = "enclavization_bin")]
 fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
   let line = match rl.readline(prompt) {
-    Ok(l) => l,
+    Ok(l) => String::from(l.trim_end()),
     Err(rustyline::error::ReadlineError::Eof) => String::from(""),
     Err(rustyline::error::ReadlineError::Interrupted) => {
       std::process::exit(0);
