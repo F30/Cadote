@@ -1,7 +1,7 @@
 From 766269a3a982e2acdc84dfb676d16e7043fd313b Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 12 May 2021 14:10:43 +0000
-Subject: [PATCH 16/34] Enclavization Pass: Update mangled names
+Subject: [PATCH 16/36] Enclavization Pass: Update mangled names
 
 ---
  llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp | 8 ++++----

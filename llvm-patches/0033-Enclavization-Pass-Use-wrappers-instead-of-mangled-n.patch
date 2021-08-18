@@ -1,7 +1,7 @@
 From 650d0cd60a154f2cc9ad2b63a555211cafbdb6dd Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 30 Jun 2021 13:07:20 +0000
-Subject: [PATCH 33/34] Enclavization Pass: Use wrappers instead of mangled
+Subject: [PATCH 33/36] Enclavization Pass: Use wrappers instead of mangled
  names in enclave modifications
 
 ---

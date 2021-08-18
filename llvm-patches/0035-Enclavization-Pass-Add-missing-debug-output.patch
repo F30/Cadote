@@ -1,0 +1,25 @@
+From d227d495f4c9ca185a52e8696547713511152ca8 Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 18 Aug 2021 19:04:01 +0000
+Subject: [PATCH 35/36] Enclavization Pass: Add missing debug output
+
+Probably an oversight that this hasn't been committed before.
+---
+ llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index 7dd75164ecc7..3a0001c69ef5 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -77,6 +77,7 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+       }
+     }
+   }
++  dbgs() << "Enclavization: Found " << reverseCalls.size() << " reverse calls\n";
+ 
+   for (auto origCall : reverseCalls) {
+     Function *callee = origCall->getCalledFunction();
+-- 
+2.25.1
+

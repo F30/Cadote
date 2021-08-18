@@ -1,7 +1,7 @@
 From 3440cb9881df2ac438b32ab071963ac72cea12c9 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Fri, 14 May 2021 11:48:34 +0000
-Subject: [PATCH 18/34] Enclavization Pass: Redesign output and error handling
+Subject: [PATCH 18/36] Enclavization Pass: Redesign output and error handling
 
 * Don't use exceptions, since the Rust compiler handles them badly. Use
   assertions instead, as we actually already rely on them being enabled

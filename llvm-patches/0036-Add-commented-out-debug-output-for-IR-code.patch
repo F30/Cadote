@@ -1,0 +1,62 @@
+From aa45190a65158224cc4f3152ceedc92328bfe19c Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Wed, 18 Aug 2021 19:39:19 +0000
+Subject: [PATCH 36/36] Add (commented-out) debug output for IR code
+
+Document what I used for debugging.
+---
+ llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp | 6 ++++++
+ llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp | 6 ++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
+index 13b535ec2fad..d0b72d686dfe 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationBinPass.cpp
+@@ -46,6 +46,9 @@ bool EnclavizationBin::runOnModule(Module &mod) {
+   std::unordered_set<CallBase *> enclaveCalls;
+   std::unordered_set<CallBase *> reverseEnclaveCalls;
+ 
++  //dbgs() << "XXX Module before modification:\n";
++  //mod.print(dbgs(), nullptr);
++
+   for (auto &func : mod) {
+     if (func.isDeclaration()) {
+       continue;
+@@ -99,6 +102,9 @@ bool EnclavizationBin::runOnModule(Module &mod) {
+     func->eraseFromParent();
+   }
+ 
++  //dbgs() << "XXX Module after modification:\n";
++  //mod.print(dbgs(), nullptr);
++
+   return true;
+ }
+ 
+diff --git a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+index 3a0001c69ef5..485978352bb6 100644
+--- a/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
++++ b/llvm/lib/Transforms/Utils/EnclavizationLibPass.cpp
+@@ -34,6 +34,9 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+   std::unordered_set<Function *> funcsToWrap;
+   std::unordered_set<CallBase *> reverseCalls;
+ 
++  //dbgs() << "XXX Module before modification:\n";
++  //mod.print(dbgs(), nullptr);
++
+   for (auto &func : mod) {
+     if (func.isDeclaration()) {
+       continue;
+@@ -94,6 +97,9 @@ bool EnclavizationLib::runOnModule(Module &mod) {
+     origCall->setCalledFunction(revPregateFunc);
+   }
+ 
++  //dbgs() << "XXX Module after modification:\n";
++  //mod.print(dbgs(), nullptr);
++
+   return true;
+ }
+ 
+-- 
+2.25.1
+

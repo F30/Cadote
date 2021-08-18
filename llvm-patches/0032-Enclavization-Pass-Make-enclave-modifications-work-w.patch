@@ -1,7 +1,7 @@
 From 37851a4efb9712434b66e80c443db29af5752857 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 30 Jun 2021 11:56:19 +0000
-Subject: [PATCH 32/34] Enclavization Pass: Make enclave modifications work
+Subject: [PATCH 32/36] Enclavization Pass: Make enclave modifications work
  with non-debug Rust builds
 
 ---

@@ -1,7 +1,7 @@
 From bb167294b0dd55ac22a395f1cdf14b342c8e2144 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 6 Apr 2021 15:46:39 +0000
-Subject: [PATCH 06/34] Enclavization Pass: Generate valid EDL files
+Subject: [PATCH 06/36] Enclavization Pass: Generate valid EDL files
 
 A pointer is either completely `user_check`ed, or not at all.
 ---
