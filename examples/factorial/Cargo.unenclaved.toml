@@ -1,0 +1,11 @@
+[package]
+name = "factorial"
+version = "0.0.1"
+authors = ["Felix Dreissig <felix.dreissig@fau.de>"]
+edition = "2018"
+
+[features]
+enclavization_bin = []
+
+[dependencies]
+cadote_untrusted_runtime = { path = "../../support/cadote_untrusted_runtime" }
