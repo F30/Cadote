@@ -1,7 +1,7 @@
 From 4d8157519b6eedd91b620d1e6b09e3ba9d6edb2e Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Mon, 28 Jun 2021 20:23:56 +0000
-Subject: [PATCH 30/36] Enclavization Pass: Implement memory copies in postcall
+Subject: [PATCH 30/37] Enclavization Pass: Implement memory copies in postcall
  functions
 
 ---

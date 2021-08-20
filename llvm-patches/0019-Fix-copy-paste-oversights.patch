@@ -1,7 +1,7 @@
 From 3cda9875737491481846dbeb2454c9456d3725d9 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Mon, 17 May 2021 11:19:15 +0000
-Subject: [PATCH 19/36] Fix copy/paste oversights
+Subject: [PATCH 19/37] Fix copy/paste oversights
 
 ---
  llvm/lib/Transforms/Utils/Enclavization/EnclaveModify.cpp | 4 ++--

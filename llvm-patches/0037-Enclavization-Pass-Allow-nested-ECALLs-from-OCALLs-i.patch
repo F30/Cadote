@@ -1,0 +1,69 @@
+From d7d9055a8cf089f0a93caafa73699a9338b53bfc Mon Sep 17 00:00:00 2001
+From: Felix Dreissig <felix.dreissig@fau.de>
+Date: Fri, 20 Aug 2021 13:24:50 +0000
+Subject: [PATCH 37/37] Enclavization Pass: Allow nested ECALLs from OCALLs in
+ EDL file
+
+---
+ .../llvm/Transforms/Utils/Enclavization/Export.h     |  1 +
+ llvm/lib/Transforms/Utils/Enclavization/Export.cpp   | 12 +++++++++++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+index 1c9e92316dfc..2e3f5d4e99f5 100644
+--- a/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
++++ b/llvm/include/llvm/Transforms/Utils/Enclavization/Export.h
+@@ -32,6 +32,7 @@ class EdlFile {
+     std::vector<std::string> structs;
+     std::unordered_set<unsigned int> wideInts;
+     std::vector<std::string> trustedFuncs;
++    std::vector<std::string> trustedFuncNames;
+     std::vector<std::string> untrustedFuncs;
+ };
+ 
+diff --git a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+index 0b103e65b02e..a4996c2da164 100644
+--- a/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
++++ b/llvm/lib/Transforms/Utils/Enclavization/Export.cpp
+@@ -51,12 +51,21 @@ void EdlFile::writeFile() {
+   for (auto entry : trustedFuncs) {
+     fstream << "public ";
+     fstream << entry;
++    fstream << ";\n";
+   }
+   fstream << "};\n";
+ 
+   fstream << "untrusted {\n";
+   for (auto entry : untrustedFuncs) {
+     fstream << entry;
++    fstream << " allow (";
++    for (size_t i = 0; i < trustedFuncNames.size(); ++i) {
++      fstream << trustedFuncNames[i];
++      if (i != trustedFuncNames.size() - 1){
++        fstream << ", ";
++      }
++    }
++    fstream << ");\n";
+   }
+   fstream << "};\n";
+ 
+@@ -114,6 +123,7 @@ std::string EdlFile::addWideInt(unsigned int width) {
+ 
+ void EdlFile::addTrustedFunction(Function *postgateFunc) {
+   addFunction(postgateFunc, trustedFuncs);
++  trustedFuncNames.push_back(postgateFunc->getName().str());
+ }
+ 
+ void EdlFile::addUntrustedFunction(Function *func) {
+@@ -146,7 +156,7 @@ void EdlFile::addFunction(llvm::Function *func, std::vector<std::string> &target
+     entryStream << edlType << " arg" << i;
+   }
+ 
+-  entryStream << ");\n";
++  entryStream << ")";
+ 
+   target.push_back(funcEntry);
+ }
+-- 
+2.25.1
+

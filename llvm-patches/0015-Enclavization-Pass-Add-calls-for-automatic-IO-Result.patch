@@ -1,7 +1,7 @@
 From 62253db9ccfcd9e7b69c1ace0a78c6b894145241 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 12 May 2021 14:09:29 +0000
-Subject: [PATCH 15/36] Enclavization Pass: Add calls for automatic IO Result
+Subject: [PATCH 15/37] Enclavization Pass: Add calls for automatic IO Result
  transformation
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

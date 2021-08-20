@@ -1,7 +1,7 @@
 From 089f931650360ba4f232eb83beb5b302427f2314 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Tue, 11 May 2021 08:56:27 +0000
-Subject: [PATCH 14/36] Enclavization Pass: Add support to convert filesystem
+Subject: [PATCH 14/37] Enclavization Pass: Add support to convert filesystem
  operations to sgxfs
 
 ---

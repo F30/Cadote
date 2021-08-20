@@ -1,7 +1,7 @@
 From f2c2768d0949c8e5f2961a556a89e986ac2b579e Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Mon, 17 May 2021 11:35:06 +0000
-Subject: [PATCH 20/36] Enclavization Pass: Fix critical typo preventing
+Subject: [PATCH 20/37] Enclavization Pass: Fix critical typo preventing
  enclavization
 
 This was... bad.

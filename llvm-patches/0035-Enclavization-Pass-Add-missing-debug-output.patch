@@ -1,7 +1,7 @@
 From d227d495f4c9ca185a52e8696547713511152ca8 Mon Sep 17 00:00:00 2001
 From: Felix Dreissig <felix.dreissig@fau.de>
 Date: Wed, 18 Aug 2021 19:04:01 +0000
-Subject: [PATCH 35/36] Enclavization Pass: Add missing debug output
+Subject: [PATCH 35/37] Enclavization Pass: Add missing debug output
 
 Probably an oversight that this hasn't been committed before.
 ---
