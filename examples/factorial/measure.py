@@ -26,15 +26,13 @@ def main():
     df = df.append(build_unenclaved(), sort=True)
     df = df.append(build_enclaved(), sort=True)
 
-    for i in range(10):
+    for _ in range(100):
         unenclaved_result = run_factorial(False)
         df = df.append(unenclaved_result, sort=True)
         enclaved_result = run_factorial(True)
         df = df.append(enclaved_result, sort=True)
 
     print(df)
-
-    print_msg('Writing serialized result to "measurement_factorial.tsv"')
     df.to_csv('measurement_factorial.tsv', sep='\t')
 
 
@@ -91,7 +89,6 @@ def ensure_turbo_off():
 
 def build_unenclaved():
 
-    print_msg('Building unenclaved program in debug and release mode')
     os.symlink('Cargo.unenclaved.toml', 'Cargo.toml')
 
     debug_multiunit_cmd = ['cargo', 'build', '--features=enclavization_bin']
@@ -160,8 +157,6 @@ def build_unenclaved():
 
 def build_enclaved():
 
-    print_msg('Building enclaved program in debug and release mode')
-
     cmd = ['make', 'all']
     debug_result = {
         'program': 'build factorial',
@@ -197,10 +192,8 @@ def run_factorial(enclaved):
 
     if enclaved:
         factorial_path = 'build/factorial'
-        print_msg('Running enclaved factorial')
     else:
         factorial_path = 'target/release/factorial'
-        print_msg('Running unenclaved factorial')
 
     results = []
 
@@ -226,19 +219,14 @@ def run_factorial(enclaved):
     return results
 
 
-def print_msg(message):
-
-    print('>>> {}'.format(message))
-
-
 def get_duration_millis(stderr_data):
 
     duration_prefix = 'EVALUATION DURATION: '
 
     for line in stderr_data.decode('utf8').split('\n'):
         if line.startswith(duration_prefix):
-            duration_micros = line[len(duration_prefix):]
-            return int(duration_micros) / 1000
+            duration_nanos = line[len(duration_prefix):]
+            return int(duration_nanos) / (10**6)
 
     raise Exception('Could not determine duration')
 

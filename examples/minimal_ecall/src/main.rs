@@ -20,15 +20,21 @@ extern crate cadote_untrusted_runtime;
 use std::time::Instant;
 
 
+static COUNT: u128 = 10000;
+
+
 #[cfg(feature = "enclavization_bin")]
 fn main() {
   let beginstant = Instant::now();
-  dummy_enclaved_();
-  eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_micros());
+  for _ in 0..COUNT {
+    dummy_enclaved_();
+  }
+  eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_nanos() / COUNT);
 }
 
 // Prohibit from being optimized away, see https://stackoverflow.com/a/42891114
 #[no_mangle]
+#[inline(never)]
 fn dummy_enclaved_() {
   // Enjoy the silence
 }
