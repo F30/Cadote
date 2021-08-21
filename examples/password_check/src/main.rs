@@ -20,13 +20,18 @@ extern crate cadote_untrusted_runtime;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::fs;
+use std::num::NonZeroU32;
 use std::io::Error as IOError;
 use std::io::Write;
 
+use hex;
+use ring::{digest, pbkdf2};
+use ring::rand::{SecureRandom, SystemRandom};
 use rustyline;
 
 
 static SHADOW_FILENAME: &str = "users.shadow";
+static PBKDF2_ITERATIONS: u32 = 100000;
 
 
 // Additional guard macro for being able to use std::process::exit() in a called function
@@ -139,8 +144,16 @@ fn get_line_or_exit(rl: &mut rustyline::Editor::<()>, prompt: &str) -> String {
 
 fn store_user_enclaved_ioresult_unit_(username: &str, password: &str) -> Result<(), IOError> {
   let mut shadow_file = fs::OpenOptions::new().create(true).append(true).open(SHADOW_FILENAME)?;
-  // TODO: Hash
-  let line = format!("{}:{}\n", username, password);
+
+  let rand = SystemRandom::new();
+  let mut salt = [0u8; digest::SHA256_OUTPUT_LEN];
+  rand.fill(&mut salt).expect("Randmness error");
+
+  let mut password_hash = [0u8; digest::SHA256_OUTPUT_LEN];
+  let iterations = NonZeroU32::new(PBKDF2_ITERATIONS).unwrap();
+  pbkdf2::derive(pbkdf2::PBKDF2_HMAC_SHA256, iterations, &salt, password.as_bytes(), &mut password_hash);
+
+  let line = format!("{}:{}:{}\n", username, hex::encode(salt), hex::encode(password_hash));
   shadow_file.write_all(line.as_bytes())?;
 
   Ok(())
@@ -157,19 +170,27 @@ fn check_password_enclaved_ioresult_bool_(username: &str, check_pwd: &str) -> Re
     }
     line = line.trim_end().to_string();
 
-    let prefix = format!("{}:", username);
-    let right_pwd = match line.strip_prefix(&prefix) {
-      Some(p) => p,
-      None => {
-        continue;
-      }
-    };
-    // TODO: Constant-time check
-    if check_pwd == right_pwd {
-      return Ok(true);
-    } else {
+    let line_parts = line.split(":").collect::<Vec<&str>>();
+    if line_parts.len() != 3 {
       return Ok(false);
     }
+
+    if line_parts[0] != username {
+      continue;
+    }
+
+    let salt = hex::decode(line_parts[1]).expect("Invalid hex");
+    let right_pwd_hash = hex::decode(line_parts[2]).expect("Invalid hex");
+    let iterations = NonZeroU32::new(PBKDF2_ITERATIONS).unwrap();
+
+    match pbkdf2::verify(pbkdf2::PBKDF2_HMAC_SHA256, iterations, &salt, &check_pwd.as_bytes(), &right_pwd_hash) {
+      Ok(()) => {
+        return Ok(true);
+      },
+      Err(_) => {
+        return Ok(false);
+      }
+    };
   }
 
   Ok(false)

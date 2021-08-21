@@ -10,4 +10,6 @@ enclavization_bin = []
 
 [dependencies]
 cadote_untrusted_runtime = { path = "../../support/cadote_untrusted_runtime" }
+hex = "0.4.0"
+ring = "0.16.20"
 rustyline = "8.0.0"
