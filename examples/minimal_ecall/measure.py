@@ -15,10 +15,9 @@ def main():
     if not os.path.samefile(os.getcwd(), os.path.dirname(__file__)):
         raise Exception('Must be run from source file directory')
 
-    # TODO
-    #ensure_users()
-    #ensure_processes()
-    #ensure_turbo_off()
+    ensure_users()
+    ensure_processes()
+    ensure_turbo_off()
 
     df = pd.DataFrame()
 
@@ -51,10 +50,14 @@ def ensure_uptime():
 
 def ensure_processes():
 
+    non_kernel_threads = 0
+
     for p in psutil.process_iter():
         p_name = p.name()
         if 'cron' in p_name:
             raise Exception('cron must be stopped')
+        if 'atd' in p_name:
+            raise Exception('atd must be stopped')
         if 'libvirtd' in p_name:
             raise Exception('libvirtd must be stopped')
         if 'snapd' in p_name:
@@ -66,15 +69,17 @@ def ensure_processes():
         if p_name == 'sh' and 'vscode-server' in p.cmdline()[1]:
             raise Exception('No vscode-server processes must be running')
 
+        if p.ppid() != 2:
+            non_kernel_threads += 1
+
+    if non_kernel_threads > 30:
+        raise Exception('Too many processes running on system')
+
     # See https://unix.stackexchange.com/q/473992
     active_timers = subprocess.run(['systemctl', 'list-units', '--type=timer', '--state=active', '--no-legend'],
                                    check=True, stdout=subprocess.PIPE)
     if active_timers.stdout.count(b'\n') != 0:
         raise Exception('Found active systemd timers')
-
-    # TODO: Adjust number
-    if len(psutil.pids()) > 25:
-        raise Exception('Too many processes running on system')
 
 
 def ensure_turbo_off():
