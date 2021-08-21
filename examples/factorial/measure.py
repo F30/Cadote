@@ -23,14 +23,14 @@ def main():
 
     df = pd.DataFrame()
 
-    df = df.append(build_unenclaved())
-    df = df.append(build_enclaved())
+    df = df.append(build_unenclaved(), sort=True)
+    df = df.append(build_enclaved(), sort=True)
 
     for i in range(10):
         unenclaved_result = run_factorial(False)
-        df = df.append(unenclaved_result)
+        df = df.append(unenclaved_result, sort=True)
         enclaved_result = run_factorial(True)
-        df = df.append(enclaved_result)
+        df = df.append(enclaved_result, sort=True)
 
     print(df)
 
