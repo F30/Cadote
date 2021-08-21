@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(test)]
 
 #[cfg(feature = "enclavization_lib")]
 #[macro_use]
@@ -17,6 +18,7 @@ extern crate cadote_trusted_runtime;
 #[cfg(feature = "enclavization_bin")]
 extern crate cadote_untrusted_runtime;
 
+use std::hint::black_box;
 use std::time::Instant;
 
 
@@ -25,16 +27,16 @@ static COUNT: u128 = 10000;
 
 #[cfg(feature = "enclavization_bin")]
 fn main() {
+  let mut x = 0;
   let beginstant = Instant::now();
   for _ in 0..COUNT {
-    dummy_enclaved_();
+    dummy_enclaved_(&mut x);
   }
   eprintln!("EVALUATION DURATION: {}", beginstant.elapsed().as_nanos() / COUNT);
 }
 
-// Prohibit from being optimized away, see https://stackoverflow.com/a/42891114
-#[no_mangle]
 #[inline(never)]
-fn dummy_enclaved_() {
-  // Enjoy the silence
+fn dummy_enclaved_(x: &mut i64) {
+  // Prohibit the function from being optimized away
+  black_box(x);
 }

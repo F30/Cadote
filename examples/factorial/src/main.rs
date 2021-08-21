@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(test)]
 
 #[cfg(feature = "enclavization_lib")]
 #[macro_use]
@@ -19,6 +20,7 @@ extern crate cadote_untrusted_runtime;
 
 use std::convert::TryFrom;
 use std::env;
+use std::hint::black_box;
 use std::time::Instant;
 
 
@@ -41,8 +43,9 @@ fn main() {
 }
 
 #[inline(never)]
-fn factorial(num: i64) -> i64 {
-  if num <= 1 {
+fn factorial(mut num: i64) -> i64 {
+  let n = black_box(&mut num);
+  if *n <= 1 {
     return 1;
   }
   num * factorial_enclaved_(num - 1)
