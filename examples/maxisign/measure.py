@@ -228,7 +228,7 @@ def run_maxisign(enclaved):
     genkey_result['duration'] = get_duration_millis(genkey.stderr)
     results.append(genkey_result)
 
-    for size in (1024, 100 * 1024, 512 * 1024, 1024**2, 4 * (1024**2), 8 * (1024**2), 12 * (1024**2)):
+    for size in (1024, 10 * 1024, 100 * 1024, 512 * 1024, 1024**2, 4 * (1024**2), 8 * (1024**2), 12 * (1024**2)):
         with open('/dev/urandom', 'rb') as urand:
             random_data = urand.read(size)
         sig_file, sig_path = tempfile.mkstemp()
