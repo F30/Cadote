@@ -1,307 +1,347 @@
 	cmd	descr	duration	enclaved	operation	program	size	time
-0	['cargo', 'build', '--features=enclavization_bin']	Time spent building the program in debug mode with multiple codegen units	19822.845697402954	False	debug	build maxisign		2021-08-21 13:28:42.697509
-1	['cargo', 'rustc', '--features=enclavization_bin', '--', '-C', 'codegen-units=1']	Time spent building the program in debug mode with one codegen unit	22406.599521636963	False	debug, codegen-units=1	build maxisign		2021-08-21 13:29:05.113325
-2	['cargo', 'build', '--features=enclavization_bin', '--release']	Time spent building the program in release mode with multiple codegen units	56082.1852684021	False	release	build maxisign		2021-08-21 13:30:01.204096
-3	['cargo', 'rustc', '--features=enclavization_bin', '--release', '--', '-C', 'codegen-units=1']	Time spent building the program in release mode with one codegen unit	68725.02088546753	False	release, codegen-units=1	build maxisign		2021-08-21 13:31:09.935880
-0	['make', 'all']	Time spent building the program in debug mode	63318.029165267944	True	debug, codegen-units=1	build maxisign		2021-08-21 13:32:13.308274
-1	['make', 'all']	Time spent building the program in release mode	191629.4071674347	True	release, codegen-units=1	build maxisign		2021-08-21 13:35:24.995238
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.1	False	genkey	maxisign		2021-08-21 13:35:24.999430
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.085	False	sign	maxisign	1024.0	2021-08-21 13:35:25.002505
-2	['target/release/maxisign', 'verify', '/tmp/tmpwf6qfsdo']	Time from after program startup until after verification result has been emitted	0.113	False	verify	maxisign	1024.0	2021-08-21 13:35:25.004534
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.674	False	sign	maxisign	102400.0	2021-08-21 13:35:25.009781
-4	['target/release/maxisign', 'verify', '/tmp/tmp3x0zhrk7']	Time from after program startup until after verification result has been emitted	0.454	False	verify	maxisign	102400.0	2021-08-21 13:35:25.012403
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.903	False	sign	maxisign	524288.0	2021-08-21 13:35:25.030118
-6	['target/release/maxisign', 'verify', '/tmp/tmp4k7ubf3w']	Time from after program startup until after verification result has been emitted	1.885	False	verify	maxisign	524288.0	2021-08-21 13:35:25.035044
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.748	False	sign	maxisign	1048576.0	2021-08-21 13:35:25.069520
-8	['target/release/maxisign', 'verify', '/tmp/tmp_ah871pa']	Time from after program startup until after verification result has been emitted	3.637	False	verify	maxisign	1048576.0	2021-08-21 13:35:25.077369
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.937	False	sign	maxisign	4194304.0	2021-08-21 13:35:25.204480
-10	['target/release/maxisign', 'verify', '/tmp/tmpuwby0o82']	Time from after program startup until after verification result has been emitted	14.288	False	verify	maxisign	4194304.0	2021-08-21 13:35:25.229820
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.799	False	sign	maxisign	8388608.0	2021-08-21 13:35:25.488862
-12	['target/release/maxisign', 'verify', '/tmp/tmpsw8mdnwo']	Time from after program startup until after verification result has been emitted	28.56	False	verify	maxisign	8388608.0	2021-08-21 13:35:25.537316
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.758	False	sign	maxisign	12582912.0	2021-08-21 13:35:25.931774
-14	['target/release/maxisign', 'verify', '/tmp/tmp93qeurlk']	Time from after program startup until after verification result has been emitted	42.887	False	verify	maxisign	12582912.0	2021-08-21 13:35:26.003306
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.743	True	genkey	maxisign		2021-08-21 13:35:26.054048
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.714	True	sign	maxisign	1024.0	2021-08-21 13:35:26.137660
-2	['build/maxisign', 'verify', '/tmp/tmpf5j2ns_t']	Time from after program startup until after verification result has been emitted	0.136	True	verify	maxisign	1024.0	2021-08-21 13:35:26.221455
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.528	True	sign	maxisign	102400.0	2021-08-21 13:35:26.308536
-4	['build/maxisign', 'verify', '/tmp/tmpynvopods']	Time from after program startup until after verification result has been emitted	0.629	True	verify	maxisign	102400.0	2021-08-21 13:35:26.397510
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.231	True	sign	maxisign	524288.0	2021-08-21 13:35:26.500705
-6	['build/maxisign', 'verify', '/tmp/tmpej721sln']	Time from after program startup until after verification result has been emitted	2.076	True	verify	maxisign	524288.0	2021-08-21 13:35:26.589468
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.519	True	sign	maxisign	1048576.0	2021-08-21 13:35:26.703809
-8	['build/maxisign', 'verify', '/tmp/tmps1vrn803']	Time from after program startup until after verification result has been emitted	3.864	True	verify	maxisign	1048576.0	2021-08-21 13:35:26.793429
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.623	True	sign	maxisign	4194304.0	2021-08-21 13:35:27.002588
-10	['build/maxisign', 'verify', '/tmp/tmpl7h4swv_']	Time from after program startup until after verification result has been emitted	14.629	True	verify	maxisign	4194304.0	2021-08-21 13:35:27.113447
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.483	True	sign	maxisign	8388608.0	2021-08-21 13:35:27.455461
-12	['build/maxisign', 'verify', '/tmp/tmpd6ckyb2g']	Time from after program startup until after verification result has been emitted	29.038	True	verify	maxisign	8388608.0	2021-08-21 13:35:27.593405
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.397	True	sign	maxisign	12582912.0	2021-08-21 13:35:28.067935
-14	['build/maxisign', 'verify', '/tmp/tmp437muvq0']	Time from after program startup until after verification result has been emitted	43.273	True	verify	maxisign	12582912.0	2021-08-21 13:35:28.233429
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.095	False	genkey	maxisign		2021-08-21 13:35:28.367258
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.084	False	sign	maxisign	1024.0	2021-08-21 13:35:28.370011
-2	['target/release/maxisign', 'verify', '/tmp/tmpcjpedkc_']	Time from after program startup until after verification result has been emitted	0.109	False	verify	maxisign	1024.0	2021-08-21 13:35:28.372099
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.668	False	sign	maxisign	102400.0	2021-08-21 13:35:28.377334
-4	['target/release/maxisign', 'verify', '/tmp/tmp3lpm09ye']	Time from after program startup until after verification result has been emitted	0.444	False	verify	maxisign	102400.0	2021-08-21 13:35:28.379961
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.902	False	sign	maxisign	524288.0	2021-08-21 13:35:28.397698
-6	['target/release/maxisign', 'verify', '/tmp/tmp0ovp6wuh']	Time from after program startup until after verification result has been emitted	2.995	False	verify	maxisign	524288.0	2021-08-21 13:35:28.402652
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.724	False	sign	maxisign	1048576.0	2021-08-21 13:35:28.438148
-8	['target/release/maxisign', 'verify', '/tmp/tmpsrlubykq']	Time from after program startup until after verification result has been emitted	3.611	False	verify	maxisign	1048576.0	2021-08-21 13:35:28.445996
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.96	False	sign	maxisign	4194304.0	2021-08-21 13:35:28.572954
-10	['target/release/maxisign', 'verify', '/tmp/tmpvg2xd_dr']	Time from after program startup until after verification result has been emitted	14.447	False	verify	maxisign	4194304.0	2021-08-21 13:35:28.598375
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.839	False	sign	maxisign	8388608.0	2021-08-21 13:35:28.857512
-12	['target/release/maxisign', 'verify', '/tmp/tmp5b3ptlq1']	Time from after program startup until after verification result has been emitted	28.663	False	verify	maxisign	8388608.0	2021-08-21 13:35:28.906174
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.706	False	sign	maxisign	12582912.0	2021-08-21 13:35:29.299984
-14	['target/release/maxisign', 'verify', '/tmp/tmp8j9esd3e']	Time from after program startup until after verification result has been emitted	42.557	False	verify	maxisign	12582912.0	2021-08-21 13:35:29.371843
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.756	True	genkey	maxisign		2021-08-21 13:35:29.423350
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.719	True	sign	maxisign	1024.0	2021-08-21 13:35:29.509684
-2	['build/maxisign', 'verify', '/tmp/tmpmwr3ohq0']	Time from after program startup until after verification result has been emitted	0.135	True	verify	maxisign	1024.0	2021-08-21 13:35:29.593407
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.532	True	sign	maxisign	102400.0	2021-08-21 13:35:29.680598
-4	['build/maxisign', 'verify', '/tmp/tmpmcihtadg']	Time from after program startup until after verification result has been emitted	0.633	True	verify	maxisign	102400.0	2021-08-21 13:35:29.765441
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.219	True	sign	maxisign	524288.0	2021-08-21 13:35:29.865228
-6	['build/maxisign', 'verify', '/tmp/tmp4dbe1ylx']	Time from after program startup until after verification result has been emitted	2.087	True	verify	maxisign	524288.0	2021-08-21 13:35:29.957450
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.531	True	sign	maxisign	1048576.0	2021-08-21 13:35:30.071963
-8	['build/maxisign', 'verify', '/tmp/tmpxqjdbsi1']	Time from after program startup until after verification result has been emitted	3.859	True	verify	maxisign	1048576.0	2021-08-21 13:35:30.161462
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.658	True	sign	maxisign	4194304.0	2021-08-21 13:35:30.371098
-10	['build/maxisign', 'verify', '/tmp/tmp3a9wu_da']	Time from after program startup until after verification result has been emitted	14.586	True	verify	maxisign	4194304.0	2021-08-21 13:35:30.481467
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.325	True	sign	maxisign	8388608.0	2021-08-21 13:35:30.824538
-12	['build/maxisign', 'verify', '/tmp/tmph2ijhp7a']	Time from after program startup until after verification result has been emitted	28.753	True	verify	maxisign	8388608.0	2021-08-21 13:35:30.963510
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.265	True	sign	maxisign	12582912.0	2021-08-21 13:35:31.441916
-14	['build/maxisign', 'verify', '/tmp/tmpz5wy0k3a']	Time from after program startup until after verification result has been emitted	43.172	True	verify	maxisign	12582912.0	2021-08-21 13:35:31.609477
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.101	False	genkey	maxisign		2021-08-21 13:35:31.743235
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.082	False	sign	maxisign	1024.0	2021-08-21 13:35:31.746025
-2	['target/release/maxisign', 'verify', '/tmp/tmp6mplvz0b']	Time from after program startup until after verification result has been emitted	0.108	False	verify	maxisign	1024.0	2021-08-21 13:35:31.748173
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.666	False	sign	maxisign	102400.0	2021-08-21 13:35:31.753412
-4	['target/release/maxisign', 'verify', '/tmp/tmp49zxgmcs']	Time from after program startup until after verification result has been emitted	0.46	False	verify	maxisign	102400.0	2021-08-21 13:35:31.756143
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.909	False	sign	maxisign	524288.0	2021-08-21 13:35:31.774005
-6	['target/release/maxisign', 'verify', '/tmp/tmp4_2_pf5o']	Time from after program startup until after verification result has been emitted	1.863	False	verify	maxisign	524288.0	2021-08-21 13:35:31.779024
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.732	False	sign	maxisign	1048576.0	2021-08-21 13:35:31.813620
-8	['target/release/maxisign', 'verify', '/tmp/tmp7whl8oys']	Time from after program startup until after verification result has been emitted	3.645	False	verify	maxisign	1048576.0	2021-08-21 13:35:31.821522
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.959	False	sign	maxisign	4194304.0	2021-08-21 13:35:31.949215
-10	['target/release/maxisign', 'verify', '/tmp/tmprx8fh7pv']	Time from after program startup until after verification result has been emitted	14.499	False	verify	maxisign	4194304.0	2021-08-21 13:35:31.974711
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.875	False	sign	maxisign	8388608.0	2021-08-21 13:35:32.235232
-12	['target/release/maxisign', 'verify', '/tmp/tmp0cax2_bl']	Time from after program startup until after verification result has been emitted	28.839	False	verify	maxisign	8388608.0	2021-08-21 13:35:32.283947
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.872	False	sign	maxisign	12582912.0	2021-08-21 13:35:32.680589
-14	['target/release/maxisign', 'verify', '/tmp/tmp31jf73mw']	Time from after program startup until after verification result has been emitted	43.28	False	verify	maxisign	12582912.0	2021-08-21 13:35:32.752670
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.746	True	genkey	maxisign		2021-08-21 13:35:32.804935
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.724	True	sign	maxisign	1024.0	2021-08-21 13:35:32.889746
-2	['build/maxisign', 'verify', '/tmp/tmp3_8w_cry']	Time from after program startup until after verification result has been emitted	0.137	True	verify	maxisign	1024.0	2021-08-21 13:35:32.973410
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.511	True	sign	maxisign	102400.0	2021-08-21 13:35:33.060645
-4	['build/maxisign', 'verify', '/tmp/tmpszp5zhfe']	Time from after program startup until after verification result has been emitted	0.628	True	verify	maxisign	102400.0	2021-08-21 13:35:33.149428
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.208	True	sign	maxisign	524288.0	2021-08-21 13:35:33.248801
-6	['build/maxisign', 'verify', '/tmp/tmpzyap2dhy']	Time from after program startup until after verification result has been emitted	2.086	True	verify	maxisign	524288.0	2021-08-21 13:35:33.337460
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.581	True	sign	maxisign	1048576.0	2021-08-21 13:35:33.465532
-8	['build/maxisign', 'verify', '/tmp/tmp565ptfdv']	Time from after program startup until after verification result has been emitted	3.887	True	verify	maxisign	1048576.0	2021-08-21 13:35:33.557453
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.809	True	sign	maxisign	4194304.0	2021-08-21 13:35:33.767235
-10	['build/maxisign', 'verify', '/tmp/tmprang2dew']	Time from after program startup until after verification result has been emitted	14.634	True	verify	maxisign	4194304.0	2021-08-21 13:35:33.877402
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.442	True	sign	maxisign	8388608.0	2021-08-21 13:35:34.220233
-12	['build/maxisign', 'verify', '/tmp/tmp5y_2uxzo']	Time from after program startup until after verification result has been emitted	28.777	True	verify	maxisign	8388608.0	2021-08-21 13:35:34.357451
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.555	True	sign	maxisign	12582912.0	2021-08-21 13:35:34.836757
-14	['build/maxisign', 'verify', '/tmp/tmpij3d0nh4']	Time from after program startup until after verification result has been emitted	43.626	True	verify	maxisign	12582912.0	2021-08-21 13:35:35.001435
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.106	False	genkey	maxisign		2021-08-21 13:35:35.135338
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.085	False	sign	maxisign	1024.0	2021-08-21 13:35:35.138175
-2	['target/release/maxisign', 'verify', '/tmp/tmp7_okm2j9']	Time from after program startup until after verification result has been emitted	0.109	False	verify	maxisign	1024.0	2021-08-21 13:35:35.140347
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.669	False	sign	maxisign	102400.0	2021-08-21 13:35:35.145588
-4	['target/release/maxisign', 'verify', '/tmp/tmpim2a8rul']	Time from after program startup until after verification result has been emitted	0.437	False	verify	maxisign	102400.0	2021-08-21 13:35:35.148305
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.912	False	sign	maxisign	524288.0	2021-08-21 13:35:35.166325
-6	['target/release/maxisign', 'verify', '/tmp/tmpvsmm9d74']	Time from after program startup until after verification result has been emitted	1.87	False	verify	maxisign	524288.0	2021-08-21 13:35:35.171342
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.746	False	sign	maxisign	1048576.0	2021-08-21 13:35:35.206263
-8	['target/release/maxisign', 'verify', '/tmp/tmptcohjrel']	Time from after program startup until after verification result has been emitted	3.628	False	verify	maxisign	1048576.0	2021-08-21 13:35:35.214173
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.998	False	sign	maxisign	4194304.0	2021-08-21 13:35:35.342870
-10	['target/release/maxisign', 'verify', '/tmp/tmp54r2kusq']	Time from after program startup until after verification result has been emitted	14.487	False	verify	maxisign	4194304.0	2021-08-21 13:35:35.368381
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.905	False	sign	maxisign	8388608.0	2021-08-21 13:35:35.631043
-12	['target/release/maxisign', 'verify', '/tmp/tmp9d_7sspl']	Time from after program startup until after verification result has been emitted	28.667	False	verify	maxisign	8388608.0	2021-08-21 13:35:35.679807
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.984	False	sign	maxisign	12582912.0	2021-08-21 13:35:36.078293
-14	['target/release/maxisign', 'verify', '/tmp/tmps052ntbx']	Time from after program startup until after verification result has been emitted	43.042	False	verify	maxisign	12582912.0	2021-08-21 13:35:36.150484
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.753	True	genkey	maxisign		2021-08-21 13:35:36.202551
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.714	True	sign	maxisign	1024.0	2021-08-21 13:35:36.285676
-2	['build/maxisign', 'verify', '/tmp/tmp8axsa06u']	Time from after program startup until after verification result has been emitted	0.135	True	verify	maxisign	1024.0	2021-08-21 13:35:36.369461
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.519	True	sign	maxisign	102400.0	2021-08-21 13:35:36.456591
-4	['build/maxisign', 'verify', '/tmp/tmp0l4nxo22']	Time from after program startup until after verification result has been emitted	0.629	True	verify	maxisign	102400.0	2021-08-21 13:35:36.541418
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.221	True	sign	maxisign	524288.0	2021-08-21 13:35:36.640962
-6	['build/maxisign', 'verify', '/tmp/tmpimso3yr0']	Time from after program startup until after verification result has been emitted	2.091	True	verify	maxisign	524288.0	2021-08-21 13:35:36.729442
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.612	True	sign	maxisign	1048576.0	2021-08-21 13:35:36.844256
-8	['build/maxisign', 'verify', '/tmp/tmpm2_om9vz']	Time from after program startup until after verification result has been emitted	3.881	True	verify	maxisign	1048576.0	2021-08-21 13:35:36.937428
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.733	True	sign	maxisign	4194304.0	2021-08-21 13:35:37.148290
-10	['build/maxisign', 'verify', '/tmp/tmpmrmf_89e']	Time from after program startup until after verification result has been emitted	14.606	True	verify	maxisign	4194304.0	2021-08-21 13:35:37.261437
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.506	True	sign	maxisign	8388608.0	2021-08-21 13:35:37.606848
-12	['build/maxisign', 'verify', '/tmp/tmpi9zijvzw']	Time from after program startup until after verification result has been emitted	29.137	True	verify	maxisign	8388608.0	2021-08-21 13:35:37.745454
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.411	True	sign	maxisign	12582912.0	2021-08-21 13:35:38.221465
-14	['build/maxisign', 'verify', '/tmp/tmptm__hwlb']	Time from after program startup until after verification result has been emitted	43.115	True	verify	maxisign	12582912.0	2021-08-21 13:35:38.385485
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.101	False	genkey	maxisign		2021-08-21 13:35:38.519288
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.083	False	sign	maxisign	1024.0	2021-08-21 13:35:38.522119
-2	['target/release/maxisign', 'verify', '/tmp/tmpsumx691l']	Time from after program startup until after verification result has been emitted	0.11	False	verify	maxisign	1024.0	2021-08-21 13:35:38.524316
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.671	False	sign	maxisign	102400.0	2021-08-21 13:35:38.529638
-4	['target/release/maxisign', 'verify', '/tmp/tmpkdv44g5_']	Time from after program startup until after verification result has been emitted	0.491	False	verify	maxisign	102400.0	2021-08-21 13:35:38.532386
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.9	False	sign	maxisign	524288.0	2021-08-21 13:35:38.550402
-6	['target/release/maxisign', 'verify', '/tmp/tmpvhzk0ma5']	Time from after program startup until after verification result has been emitted	1.859	False	verify	maxisign	524288.0	2021-08-21 13:35:38.555430
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.74	False	sign	maxisign	1048576.0	2021-08-21 13:35:38.590015
-8	['target/release/maxisign', 'verify', '/tmp/tmpimu_o4sp']	Time from after program startup until after verification result has been emitted	3.629	False	verify	maxisign	1048576.0	2021-08-21 13:35:38.597949
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.911	False	sign	maxisign	4194304.0	2021-08-21 13:35:38.725631
-10	['target/release/maxisign', 'verify', '/tmp/tmpuoz66_bl']	Time from after program startup until after verification result has been emitted	14.357	False	verify	maxisign	4194304.0	2021-08-21 13:35:38.751084
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.874	False	sign	maxisign	8388608.0	2021-08-21 13:35:39.011448
-12	['target/release/maxisign', 'verify', '/tmp/tmpvbf93y6p']	Time from after program startup until after verification result has been emitted	28.536	False	verify	maxisign	8388608.0	2021-08-21 13:35:39.060231
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.603	False	sign	maxisign	12582912.0	2021-08-21 13:35:39.464386
-14	['target/release/maxisign', 'verify', '/tmp/tmphvfxycir']	Time from after program startup until after verification result has been emitted	42.943	False	verify	maxisign	12582912.0	2021-08-21 13:35:39.538519
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.74	True	genkey	maxisign		2021-08-21 13:35:39.590442
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.715	True	sign	maxisign	1024.0	2021-08-21 13:35:39.673780
-2	['build/maxisign', 'verify', '/tmp/tmp2ozr8er8']	Time from after program startup until after verification result has been emitted	0.139	True	verify	maxisign	1024.0	2021-08-21 13:35:39.757409
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.485	True	sign	maxisign	102400.0	2021-08-21 13:35:39.844689
-4	['build/maxisign', 'verify', '/tmp/tmpbmwyjl_q']	Time from after program startup until after verification result has been emitted	0.606	True	verify	maxisign	102400.0	2021-08-21 13:35:39.933384
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.236	True	sign	maxisign	524288.0	2021-08-21 13:35:40.036807
-6	['build/maxisign', 'verify', '/tmp/tmpcytv0765']	Time from after program startup until after verification result has been emitted	2.084	True	verify	maxisign	524288.0	2021-08-21 13:35:40.125477
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.559	True	sign	maxisign	1048576.0	2021-08-21 13:35:40.246290
-8	['build/maxisign', 'verify', '/tmp/tmpj7abdace']	Time from after program startup until after verification result has been emitted	3.878	True	verify	maxisign	1048576.0	2021-08-21 13:35:40.337509
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.631	True	sign	maxisign	4194304.0	2021-08-21 13:35:40.547157
-10	['build/maxisign', 'verify', '/tmp/tmp_4gwocnu']	Time from after program startup until after verification result has been emitted	14.54	True	verify	maxisign	4194304.0	2021-08-21 13:35:40.657511
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.464	True	sign	maxisign	8388608.0	2021-08-21 13:35:41.000608
-12	['build/maxisign', 'verify', '/tmp/tmpvcacptv0']	Time from after program startup until after verification result has been emitted	28.939	True	verify	maxisign	8388608.0	2021-08-21 13:35:41.141450
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.46	True	sign	maxisign	12582912.0	2021-08-21 13:35:41.617936
-14	['build/maxisign', 'verify', '/tmp/tmp3jycm6ra']	Time from after program startup until after verification result has been emitted	43.057	True	verify	maxisign	12582912.0	2021-08-21 13:35:41.785527
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.101	False	genkey	maxisign		2021-08-21 13:35:41.919316
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.083	False	sign	maxisign	1024.0	2021-08-21 13:35:41.922183
-2	['target/release/maxisign', 'verify', '/tmp/tmpuybkhjkx']	Time from after program startup until after verification result has been emitted	0.115	False	verify	maxisign	1024.0	2021-08-21 13:35:41.924410
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.662	False	sign	maxisign	102400.0	2021-08-21 13:35:41.929701
-4	['target/release/maxisign', 'verify', '/tmp/tmp974gf0mx']	Time from after program startup until after verification result has been emitted	0.489	False	verify	maxisign	102400.0	2021-08-21 13:35:41.932454
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.904	False	sign	maxisign	524288.0	2021-08-21 13:35:41.950538
-6	['target/release/maxisign', 'verify', '/tmp/tmpgasgalde']	Time from after program startup until after verification result has been emitted	1.872	False	verify	maxisign	524288.0	2021-08-21 13:35:41.955577
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.723	False	sign	maxisign	1048576.0	2021-08-21 13:35:41.990168
-8	['target/release/maxisign', 'verify', '/tmp/tmp49uqu13n']	Time from after program startup until after verification result has been emitted	3.638	False	verify	maxisign	1048576.0	2021-08-21 13:35:41.998189
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.927	False	sign	maxisign	4194304.0	2021-08-21 13:35:42.125937
-10	['target/release/maxisign', 'verify', '/tmp/tmpu915awee']	Time from after program startup until after verification result has been emitted	14.362	False	verify	maxisign	4194304.0	2021-08-21 13:35:42.151449
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.828	False	sign	maxisign	8388608.0	2021-08-21 13:35:42.411527
-12	['target/release/maxisign', 'verify', '/tmp/tmpnvw2sssx']	Time from after program startup until after verification result has been emitted	28.57	False	verify	maxisign	8388608.0	2021-08-21 13:35:42.460290
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.657	False	sign	maxisign	12582912.0	2021-08-21 13:35:42.856058
-14	['target/release/maxisign', 'verify', '/tmp/tmp2ql2he7e']	Time from after program startup until after verification result has been emitted	42.913	False	verify	maxisign	12582912.0	2021-08-21 13:35:42.927992
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.749	True	genkey	maxisign		2021-08-21 13:35:42.980030
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.712	True	sign	maxisign	1024.0	2021-08-21 13:35:43.065692
-2	['build/maxisign', 'verify', '/tmp/tmpb98zz5pw']	Time from after program startup until after verification result has been emitted	0.135	True	verify	maxisign	1024.0	2021-08-21 13:35:43.149442
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.528	True	sign	maxisign	102400.0	2021-08-21 13:35:43.236645
-4	['build/maxisign', 'verify', '/tmp/tmpuzrj8fq9']	Time from after program startup until after verification result has been emitted	0.645	True	verify	maxisign	102400.0	2021-08-21 13:35:43.325409
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.226	True	sign	maxisign	524288.0	2021-08-21 13:35:43.424812
-6	['build/maxisign', 'verify', '/tmp/tmp3f069_y1']	Time from after program startup until after verification result has been emitted	2.095	True	verify	maxisign	524288.0	2021-08-21 13:35:43.513453
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.535	True	sign	maxisign	1048576.0	2021-08-21 13:35:43.634336
-8	['build/maxisign', 'verify', '/tmp/tmp0emeuckk']	Time from after program startup until after verification result has been emitted	3.848	True	verify	maxisign	1048576.0	2021-08-21 13:35:43.725460
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.651	True	sign	maxisign	4194304.0	2021-08-21 13:35:43.936218
-10	['build/maxisign', 'verify', '/tmp/tmp5yfnv91y']	Time from after program startup until after verification result has been emitted	14.625	True	verify	maxisign	4194304.0	2021-08-21 13:35:44.049432
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.537	True	sign	maxisign	8388608.0	2021-08-21 13:35:44.395195
-12	['build/maxisign', 'verify', '/tmp/tmphij9erah']	Time from after program startup until after verification result has been emitted	28.942	True	verify	maxisign	8388608.0	2021-08-21 13:35:44.533456
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.44	True	sign	maxisign	12582912.0	2021-08-21 13:35:45.012414
-14	['build/maxisign', 'verify', '/tmp/tmpje22b2jn']	Time from after program startup until after verification result has been emitted	43.308	True	verify	maxisign	12582912.0	2021-08-21 13:35:45.177454
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.096	False	genkey	maxisign		2021-08-21 13:35:45.311338
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.083	False	sign	maxisign	1024.0	2021-08-21 13:35:45.314244
-2	['target/release/maxisign', 'verify', '/tmp/tmpzikcb_29']	Time from after program startup until after verification result has been emitted	0.108	False	verify	maxisign	1024.0	2021-08-21 13:35:45.316448
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.675	False	sign	maxisign	102400.0	2021-08-21 13:35:45.321832
-4	['target/release/maxisign', 'verify', '/tmp/tmpc8xy5x_l']	Time from after program startup until after verification result has been emitted	0.491	False	verify	maxisign	102400.0	2021-08-21 13:35:45.324649
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.913	False	sign	maxisign	524288.0	2021-08-21 13:35:45.342850
-6	['target/release/maxisign', 'verify', '/tmp/tmpa29xw3pb']	Time from after program startup until after verification result has been emitted	1.922	False	verify	maxisign	524288.0	2021-08-21 13:35:45.347936
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.752	False	sign	maxisign	1048576.0	2021-08-21 13:35:45.382945
-8	['target/release/maxisign', 'verify', '/tmp/tmp8gkhaq6o']	Time from after program startup until after verification result has been emitted	3.65	False	verify	maxisign	1048576.0	2021-08-21 13:35:45.390953
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.968	False	sign	maxisign	4194304.0	2021-08-21 13:35:45.520674
-10	['target/release/maxisign', 'verify', '/tmp/tmp18gm3n9h']	Time from after program startup until after verification result has been emitted	14.403	False	verify	maxisign	4194304.0	2021-08-21 13:35:45.546303
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.121	False	sign	maxisign	8388608.0	2021-08-21 13:35:45.808411
-12	['target/release/maxisign', 'verify', '/tmp/tmp6_00wzjj']	Time from after program startup until after verification result has been emitted	28.739	False	verify	maxisign	8388608.0	2021-08-21 13:35:45.857473
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.824	False	sign	maxisign	12582912.0	2021-08-21 13:35:46.256269
-14	['target/release/maxisign', 'verify', '/tmp/tmpxdqyow9v']	Time from after program startup until after verification result has been emitted	43.136	False	verify	maxisign	12582912.0	2021-08-21 13:35:46.328409
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.737	True	genkey	maxisign		2021-08-21 13:35:46.380746
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.722	True	sign	maxisign	1024.0	2021-08-21 13:35:46.465713
-2	['build/maxisign', 'verify', '/tmp/tmpbp98lm4u']	Time from after program startup until after verification result has been emitted	0.137	True	verify	maxisign	1024.0	2021-08-21 13:35:46.549450
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.492	True	sign	maxisign	102400.0	2021-08-21 13:35:46.636623
-4	['build/maxisign', 'verify', '/tmp/tmph0tmf6ja']	Time from after program startup until after verification result has been emitted	0.632	True	verify	maxisign	102400.0	2021-08-21 13:35:46.725404
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.215	True	sign	maxisign	524288.0	2021-08-21 13:35:46.828902
-6	['build/maxisign', 'verify', '/tmp/tmpx60xrdz2']	Time from after program startup until after verification result has been emitted	2.079	True	verify	maxisign	524288.0	2021-08-21 13:35:46.917447
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.545	True	sign	maxisign	1048576.0	2021-08-21 13:35:47.038616
-8	['build/maxisign', 'verify', '/tmp/tmplj_ob2za']	Time from after program startup until after verification result has been emitted	3.858	True	verify	maxisign	1048576.0	2021-08-21 13:35:47.129437
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.695	True	sign	maxisign	4194304.0	2021-08-21 13:35:47.340319
-10	['build/maxisign', 'verify', '/tmp/tmpv53k8eft']	Time from after program startup until after verification result has been emitted	14.635	True	verify	maxisign	4194304.0	2021-08-21 13:35:47.453480
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.522	True	sign	maxisign	8388608.0	2021-08-21 13:35:47.798735
-12	['build/maxisign', 'verify', '/tmp/tmp5xy6hc82']	Time from after program startup until after verification result has been emitted	29.045	True	verify	maxisign	8388608.0	2021-08-21 13:35:47.937461
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.563	True	sign	maxisign	12582912.0	2021-08-21 13:35:48.416479
-14	['build/maxisign', 'verify', '/tmp/tmp8unrynkx']	Time from after program startup until after verification result has been emitted	43.32	True	verify	maxisign	12582912.0	2021-08-21 13:35:48.581476
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.1	False	genkey	maxisign		2021-08-21 13:35:48.715319
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.089	False	sign	maxisign	1024.0	2021-08-21 13:35:48.718278
-2	['target/release/maxisign', 'verify', '/tmp/tmpqs25w7v7']	Time from after program startup until after verification result has been emitted	0.111	False	verify	maxisign	1024.0	2021-08-21 13:35:48.720560
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.664	False	sign	maxisign	102400.0	2021-08-21 13:35:48.725948
-4	['target/release/maxisign', 'verify', '/tmp/tmpgyx2w0kn']	Time from after program startup until after verification result has been emitted	0.492	False	verify	maxisign	102400.0	2021-08-21 13:35:48.728764
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.924	False	sign	maxisign	524288.0	2021-08-21 13:35:48.747029
-6	['target/release/maxisign', 'verify', '/tmp/tmp6vqb_imx']	Time from after program startup until after verification result has been emitted	1.86	False	verify	maxisign	524288.0	2021-08-21 13:35:48.752142
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.779	False	sign	maxisign	1048576.0	2021-08-21 13:35:48.787065
-8	['target/release/maxisign', 'verify', '/tmp/tmp1u0xok2w']	Time from after program startup until after verification result has been emitted	3.651	False	verify	maxisign	1048576.0	2021-08-21 13:35:48.795143
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.059	False	sign	maxisign	4194304.0	2021-08-21 13:35:48.923823
-10	['target/release/maxisign', 'verify', '/tmp/tmpv_6k64ns']	Time from after program startup until after verification result has been emitted	14.4	False	verify	maxisign	4194304.0	2021-08-21 13:35:48.949516
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.034	False	sign	maxisign	8388608.0	2021-08-21 13:35:49.211687
-12	['target/release/maxisign', 'verify', '/tmp/tmpo7k5mrph']	Time from after program startup until after verification result has been emitted	28.785	False	verify	maxisign	8388608.0	2021-08-21 13:35:49.260723
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.973	False	sign	maxisign	12582912.0	2021-08-21 13:35:49.659957
-14	['target/release/maxisign', 'verify', '/tmp/tmpkh8tqong']	Time from after program startup until after verification result has been emitted	43.072	False	verify	maxisign	12582912.0	2021-08-21 13:35:49.732262
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.74	True	genkey	maxisign		2021-08-21 13:35:49.784562
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.716	True	sign	maxisign	1024.0	2021-08-21 13:35:49.869720
-2	['build/maxisign', 'verify', '/tmp/tmpgtw3qimq']	Time from after program startup until after verification result has been emitted	0.137	True	verify	maxisign	1024.0	2021-08-21 13:35:49.953476
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.521	True	sign	maxisign	102400.0	2021-08-21 13:35:50.040626
-4	['build/maxisign', 'verify', '/tmp/tmph2mc5lme']	Time from after program startup until after verification result has been emitted	0.636	True	verify	maxisign	102400.0	2021-08-21 13:35:50.129436
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.22	True	sign	maxisign	524288.0	2021-08-21 13:35:50.228911
-6	['build/maxisign', 'verify', '/tmp/tmpkgerrtrs']	Time from after program startup until after verification result has been emitted	2.09	True	verify	maxisign	524288.0	2021-08-21 13:35:50.317457
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.52	True	sign	maxisign	1048576.0	2021-08-21 13:35:50.438623
-8	['build/maxisign', 'verify', '/tmp/tmphpk3rxy3']	Time from after program startup until after verification result has been emitted	3.875	True	verify	maxisign	1048576.0	2021-08-21 13:35:50.529457
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.775	True	sign	maxisign	4194304.0	2021-08-21 13:35:50.740204
-10	['build/maxisign', 'verify', '/tmp/tmpogx3lp0b']	Time from after program startup until after verification result has been emitted	14.63	True	verify	maxisign	4194304.0	2021-08-21 13:35:50.853454
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.844	True	sign	maxisign	8388608.0	2021-08-21 13:35:51.198823
-12	['build/maxisign', 'verify', '/tmp/tmpo1_vmrix']	Time from after program startup until after verification result has been emitted	28.978	True	verify	maxisign	8388608.0	2021-08-21 13:35:51.337474
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.588	True	sign	maxisign	12582912.0	2021-08-21 13:35:51.817154
-14	['build/maxisign', 'verify', '/tmp/tmpr9vycd__']	Time from after program startup until after verification result has been emitted	43.409	True	verify	maxisign	12582912.0	2021-08-21 13:35:51.985488
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.099	False	genkey	maxisign		2021-08-21 13:35:52.119373
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.084	False	sign	maxisign	1024.0	2021-08-21 13:35:52.122349
-2	['target/release/maxisign', 'verify', '/tmp/tmpb50_68lg']	Time from after program startup until after verification result has been emitted	0.108	False	verify	maxisign	1024.0	2021-08-21 13:35:52.124604
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.675	False	sign	maxisign	102400.0	2021-08-21 13:35:52.130007
-4	['target/release/maxisign', 'verify', '/tmp/tmp2lup2nfe']	Time from after program startup until after verification result has been emitted	0.487	False	verify	maxisign	102400.0	2021-08-21 13:35:52.132852
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.905	False	sign	maxisign	524288.0	2021-08-21 13:35:52.151137
-6	['target/release/maxisign', 'verify', '/tmp/tmp7udxc4n_']	Time from after program startup until after verification result has been emitted	1.951	False	verify	maxisign	524288.0	2021-08-21 13:35:52.156268
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.763	False	sign	maxisign	1048576.0	2021-08-21 13:35:52.191322
-8	['target/release/maxisign', 'verify', '/tmp/tmp0nqsj7r3']	Time from after program startup until after verification result has been emitted	3.656	False	verify	maxisign	1048576.0	2021-08-21 13:35:52.199353
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.967	False	sign	maxisign	4194304.0	2021-08-21 13:35:52.328341
-10	['target/release/maxisign', 'verify', '/tmp/tmpvw66h1m9']	Time from after program startup until after verification result has been emitted	14.35	False	verify	maxisign	4194304.0	2021-08-21 13:35:52.353988
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.851	False	sign	maxisign	8388608.0	2021-08-21 13:35:52.616487
-12	['target/release/maxisign', 'verify', '/tmp/tmplkzmzl0r']	Time from after program startup until after verification result has been emitted	28.663	False	verify	maxisign	8388608.0	2021-08-21 13:35:52.665391
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.847	False	sign	maxisign	12582912.0	2021-08-21 13:35:53.064218
-14	['target/release/maxisign', 'verify', '/tmp/tmptvqh2q2n']	Time from after program startup until after verification result has been emitted	43.067	False	verify	maxisign	12582912.0	2021-08-21 13:35:53.136407
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.744	True	genkey	maxisign		2021-08-21 13:35:53.188701
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.715	True	sign	maxisign	1024.0	2021-08-21 13:35:53.273724
-2	['build/maxisign', 'verify', '/tmp/tmp3x22svjm']	Time from after program startup until after verification result has been emitted	0.136	True	verify	maxisign	1024.0	2021-08-21 13:35:53.357493
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.523	True	sign	maxisign	102400.0	2021-08-21 13:35:53.448645
-4	['build/maxisign', 'verify', '/tmp/tmphdr2ydy3']	Time from after program startup until after verification result has been emitted	0.624	True	verify	maxisign	102400.0	2021-08-21 13:35:53.533470
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.231	True	sign	maxisign	524288.0	2021-08-21 13:35:53.633014
-6	['build/maxisign', 'verify', '/tmp/tmpb_wuwvh7']	Time from after program startup until after verification result has been emitted	2.077	True	verify	maxisign	524288.0	2021-08-21 13:35:53.721486
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.572	True	sign	maxisign	1048576.0	2021-08-21 13:35:53.840247
-8	['build/maxisign', 'verify', '/tmp/tmprn67wj3k']	Time from after program startup until after verification result has been emitted	3.866	True	verify	maxisign	1048576.0	2021-08-21 13:35:53.933495
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.767	True	sign	maxisign	4194304.0	2021-08-21 13:35:54.144290
-10	['build/maxisign', 'verify', '/tmp/tmpxt_8plp8']	Time from after program startup until after verification result has been emitted	14.514	True	verify	maxisign	4194304.0	2021-08-21 13:35:54.257459
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.466	True	sign	maxisign	8388608.0	2021-08-21 13:35:54.602851
-12	['build/maxisign', 'verify', '/tmp/tmpq6o2jt7z']	Time from after program startup until after verification result has been emitted	28.869	True	verify	maxisign	8388608.0	2021-08-21 13:35:54.741455
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.538	True	sign	maxisign	12582912.0	2021-08-21 13:35:55.220924
-14	['build/maxisign', 'verify', '/tmp/tmpwm_f3xuo']	Time from after program startup until after verification result has been emitted	43.185	True	verify	maxisign	12582912.0	2021-08-21 13:35:55.385484
-0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.098	False	genkey	maxisign		2021-08-21 13:35:55.519356
-1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.082	False	sign	maxisign	1024.0	2021-08-21 13:35:55.522363
-2	['target/release/maxisign', 'verify', '/tmp/tmpmo1mpc1w']	Time from after program startup until after verification result has been emitted	0.108	False	verify	maxisign	1024.0	2021-08-21 13:35:55.524663
-3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.67	False	sign	maxisign	102400.0	2021-08-21 13:35:55.530101
-4	['target/release/maxisign', 'verify', '/tmp/tmpwpkezcmo']	Time from after program startup until after verification result has been emitted	0.487	False	verify	maxisign	102400.0	2021-08-21 13:35:55.533043
-5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.939	False	sign	maxisign	524288.0	2021-08-21 13:35:55.551333
-6	['target/release/maxisign', 'verify', '/tmp/tmpf9953kv9']	Time from after program startup until after verification result has been emitted	1.886	False	verify	maxisign	524288.0	2021-08-21 13:35:55.556498
-7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.785	False	sign	maxisign	1048576.0	2021-08-21 13:35:55.591536
-8	['target/release/maxisign', 'verify', '/tmp/tmprhp7wxx1']	Time from after program startup until after verification result has been emitted	3.664	False	verify	maxisign	1048576.0	2021-08-21 13:35:55.599688
-9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.139	False	sign	maxisign	4194304.0	2021-08-21 13:35:55.728555
-10	['target/release/maxisign', 'verify', '/tmp/tmpttr0achy']	Time from after program startup until after verification result has been emitted	14.562	False	verify	maxisign	4194304.0	2021-08-21 13:35:55.754399
-11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.048	False	sign	maxisign	8388608.0	2021-08-21 13:35:56.016908
-12	['target/release/maxisign', 'verify', '/tmp/tmpurs8fypd']	Time from after program startup until after verification result has been emitted	28.822	False	verify	maxisign	8388608.0	2021-08-21 13:35:56.066029
-13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.147	False	sign	maxisign	12582912.0	2021-08-21 13:35:56.465757
-14	['target/release/maxisign', 'verify', '/tmp/tmpieqt5ko6']	Time from after program startup until after verification result has been emitted	43.464	False	verify	maxisign	12582912.0	2021-08-21 13:35:56.538310
-0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.76	True	genkey	maxisign		2021-08-21 13:35:56.591063
-1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.721	True	sign	maxisign	1024.0	2021-08-21 13:35:56.677726
-2	['build/maxisign', 'verify', '/tmp/tmp1q0faukk']	Time from after program startup until after verification result has been emitted	0.137	True	verify	maxisign	1024.0	2021-08-21 13:35:56.761445
-3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.521	True	sign	maxisign	102400.0	2021-08-21 13:35:56.848693
-4	['build/maxisign', 'verify', '/tmp/tmpali2dp1i']	Time from after program startup until after verification result has been emitted	0.642	True	verify	maxisign	102400.0	2021-08-21 13:35:56.937473
-5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.206	True	sign	maxisign	524288.0	2021-08-21 13:35:57.037012
-6	['build/maxisign', 'verify', '/tmp/tmpu9q4vfj1']	Time from after program startup until after verification result has been emitted	2.092	True	verify	maxisign	524288.0	2021-08-21 13:35:57.125471
-7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.581	True	sign	maxisign	1048576.0	2021-08-21 13:35:57.253865
-8	['build/maxisign', 'verify', '/tmp/tmpw4e4lwjb']	Time from after program startup until after verification result has been emitted	3.871	True	verify	maxisign	1048576.0	2021-08-21 13:35:57.345472
-9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.681	True	sign	maxisign	4194304.0	2021-08-21 13:35:57.556354
-10	['build/maxisign', 'verify', '/tmp/tmpck7h8fni']	Time from after program startup until after verification result has been emitted	14.683	True	verify	maxisign	4194304.0	2021-08-21 13:35:57.669469
-11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.517	True	sign	maxisign	8388608.0	2021-08-21 13:35:58.014909
-12	['build/maxisign', 'verify', '/tmp/tmpjjjxc5gp']	Time from after program startup until after verification result has been emitted	29.183	True	verify	maxisign	8388608.0	2021-08-21 13:35:58.153482
-13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.966	True	sign	maxisign	12582912.0	2021-08-21 13:35:58.632493
-14	['build/maxisign', 'verify', '/tmp/tmpxwgkloym']	Time from after program startup until after verification result has been emitted	43.154	True	verify	maxisign	12582912.0	2021-08-21 13:35:58.797489
+0	['cargo', 'build', '--features=enclavization_bin']	Time spent building the program in debug mode with multiple codegen units	21161.932706832886	False	debug	build maxisign		2021-08-23 08:27:25.113721
+1	['cargo', 'rustc', '--features=enclavization_bin', '--', '-C', 'codegen-units=1']	Time spent building the program in debug mode with one codegen unit	21837.27788925171	False	debug, codegen-units=1	build maxisign		2021-08-23 08:27:46.960001
+2	['cargo', 'build', '--features=enclavization_bin', '--release']	Time spent building the program in release mode with multiple codegen units	55997.244119644165	False	release	build maxisign		2021-08-23 08:28:42.965638
+3	['cargo', 'rustc', '--features=enclavization_bin', '--release', '--', '-C', 'codegen-units=1']	Time spent building the program in release mode with one codegen unit	67073.3494758606	False	release, codegen-units=1	build maxisign		2021-08-23 08:29:50.045702
+0	['make', 'all']	Time spent building the program in debug mode	65775.62928199768	True	debug, codegen-units=1	build maxisign		2021-08-23 08:30:55.890963
+1	['make', 'all']	Time spent building the program in release mode	190235.0730895996	True	release, codegen-units=1	build maxisign		2021-08-23 08:34:06.183334
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.094	False	genkey	maxisign		2021-08-23 08:34:06.195397
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.084	False	sign	maxisign	1024.0	2021-08-23 08:34:06.198262
+2	['target/release/maxisign', 'verify', '/tmp/tmpueor97or']	Time from after program startup until after verification result has been emitted	0.106	False	verify	maxisign	1024.0	2021-08-23 08:34:06.200283
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.124	False	sign	maxisign	10240.0	2021-08-23 08:34:06.202839
+4	['target/release/maxisign', 'verify', '/tmp/tmpm3uet5vc']	Time from after program startup until after verification result has been emitted	0.131	False	verify	maxisign	10240.0	2021-08-23 08:34:06.204898
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.659	False	sign	maxisign	102400.0	2021-08-23 08:34:06.210094
+6	['target/release/maxisign', 'verify', '/tmp/tmpfuanztms']	Time from after program startup until after verification result has been emitted	0.489	False	verify	maxisign	102400.0	2021-08-23 08:34:06.212728
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.894	False	sign	maxisign	524288.0	2021-08-23 08:34:06.230681
+8	['target/release/maxisign', 'verify', '/tmp/tmpvcs3gc90']	Time from after program startup until after verification result has been emitted	1.868	False	verify	maxisign	524288.0	2021-08-23 08:34:06.235565
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.724	False	sign	maxisign	1048576.0	2021-08-23 08:34:06.270081
+10	['target/release/maxisign', 'verify', '/tmp/tmp3oeh_2ux']	Time from after program startup until after verification result has been emitted	3.629	False	verify	maxisign	1048576.0	2021-08-23 08:34:06.277851
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.961	False	sign	maxisign	4194304.0	2021-08-23 08:34:06.405434
+12	['target/release/maxisign', 'verify', '/tmp/tmp8azknva6']	Time from after program startup until after verification result has been emitted	14.5	False	verify	maxisign	4194304.0	2021-08-23 08:34:06.430672
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.77	False	sign	maxisign	8388608.0	2021-08-23 08:34:06.691033
+14	['target/release/maxisign', 'verify', '/tmp/tmpwazkq83i']	Time from after program startup until after verification result has been emitted	28.845	False	verify	maxisign	8388608.0	2021-08-23 08:34:06.739292
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	68.903	False	sign	maxisign	12582912.0	2021-08-23 08:34:07.135780
+16	['target/release/maxisign', 'verify', '/tmp/tmpjorhgbq9']	Time from after program startup until after verification result has been emitted	43.078	False	verify	maxisign	12582912.0	2021-08-23 08:34:07.207293
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.721	True	genkey	maxisign		2021-08-23 08:34:07.258059
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.69	True	sign	maxisign	1024.0	2021-08-23 08:34:07.365567
+2	['build/maxisign', 'verify', '/tmp/tmpr5z3wbpl']	Time from after program startup until after verification result has been emitted	0.131	True	verify	maxisign	1024.0	2021-08-23 08:34:07.449316
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.728	True	sign	maxisign	10240.0	2021-08-23 08:34:07.533877
+4	['build/maxisign', 'verify', '/tmp/tmp6poqu0a7']	Time from after program startup until after verification result has been emitted	0.157	True	verify	maxisign	10240.0	2021-08-23 08:34:07.617314
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.469	True	sign	maxisign	102400.0	2021-08-23 08:34:07.700558
+6	['build/maxisign', 'verify', '/tmp/tmp9az7wznc']	Time from after program startup until after verification result has been emitted	0.602	True	verify	maxisign	102400.0	2021-08-23 08:34:07.785352
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.075	True	sign	maxisign	524288.0	2021-08-23 08:34:07.884895
+8	['build/maxisign', 'verify', '/tmp/tmp88qbtng5']	Time from after program startup until after verification result has been emitted	2.03	True	verify	maxisign	524288.0	2021-08-23 08:34:07.969308
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.479	True	sign	maxisign	1048576.0	2021-08-23 08:34:08.084184
+10	['build/maxisign', 'verify', '/tmp/tmpfdw0uvma']	Time from after program startup until after verification result has been emitted	3.805	True	verify	maxisign	1048576.0	2021-08-23 08:34:08.173313
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.56	True	sign	maxisign	4194304.0	2021-08-23 08:34:08.386394
+12	['build/maxisign', 'verify', '/tmp/tmp3t4ng88k']	Time from after program startup until after verification result has been emitted	14.563	True	verify	maxisign	4194304.0	2021-08-23 08:34:08.497332
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.492	True	sign	maxisign	8388608.0	2021-08-23 08:34:08.838619
+14	['build/maxisign', 'verify', '/tmp/tmpb1aqieto']	Time from after program startup until after verification result has been emitted	28.732	True	verify	maxisign	8388608.0	2021-08-23 08:34:08.977325
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.485	True	sign	maxisign	12582912.0	2021-08-23 08:34:09.457194
+16	['build/maxisign', 'verify', '/tmp/tmps_oaw2fw']	Time from after program startup until after verification result has been emitted	43.162	True	verify	maxisign	12582912.0	2021-08-23 08:34:09.621344
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.098	False	genkey	maxisign		2021-08-23 08:34:09.751730
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.082	False	sign	maxisign	1024.0	2021-08-23 08:34:09.754351
+2	['target/release/maxisign', 'verify', '/tmp/tmpho1nf2f8']	Time from after program startup until after verification result has been emitted	0.107	False	verify	maxisign	1024.0	2021-08-23 08:34:09.756426
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.124	False	sign	maxisign	10240.0	2021-08-23 08:34:09.758978
+4	['target/release/maxisign', 'verify', '/tmp/tmpb0hze2x9']	Time from after program startup until after verification result has been emitted	0.133	False	verify	maxisign	10240.0	2021-08-23 08:34:09.761053
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.672	False	sign	maxisign	102400.0	2021-08-23 08:34:09.766291
+6	['target/release/maxisign', 'verify', '/tmp/tmpw07hppj8']	Time from after program startup until after verification result has been emitted	0.487	False	verify	maxisign	102400.0	2021-08-23 08:34:09.768926
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.904	False	sign	maxisign	524288.0	2021-08-23 08:34:09.786992
+8	['target/release/maxisign', 'verify', '/tmp/tmpb27056_d']	Time from after program startup until after verification result has been emitted	1.888	False	verify	maxisign	524288.0	2021-08-23 08:34:09.791893
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.75	False	sign	maxisign	1048576.0	2021-08-23 08:34:09.826670
+10	['target/release/maxisign', 'verify', '/tmp/tmp7xa_7hwi']	Time from after program startup until after verification result has been emitted	3.63	False	verify	maxisign	1048576.0	2021-08-23 08:34:09.834483
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.052	False	sign	maxisign	4194304.0	2021-08-23 08:34:09.963092
+12	['target/release/maxisign', 'verify', '/tmp/tmpevbbvy0_']	Time from after program startup until after verification result has been emitted	14.506	False	verify	maxisign	4194304.0	2021-08-23 08:34:09.988492
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.938	False	sign	maxisign	8388608.0	2021-08-23 08:34:10.250675
+14	['target/release/maxisign', 'verify', '/tmp/tmp2__tye0g']	Time from after program startup until after verification result has been emitted	28.995	False	verify	maxisign	8388608.0	2021-08-23 08:34:10.299291
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.349	False	sign	maxisign	12582912.0	2021-08-23 08:34:10.698885
+16	['target/release/maxisign', 'verify', '/tmp/tmp4rtngkom']	Time from after program startup until after verification result has been emitted	43.362	False	verify	maxisign	12582912.0	2021-08-23 08:34:10.771199
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.713	True	genkey	maxisign		2021-08-23 08:34:10.823419
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.685	True	sign	maxisign	1024.0	2021-08-23 08:34:10.905602
+2	['build/maxisign', 'verify', '/tmp/tmpend8dj1a']	Time from after program startup until after verification result has been emitted	0.13	True	verify	maxisign	1024.0	2021-08-23 08:34:10.989331
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.734	True	sign	maxisign	10240.0	2021-08-23 08:34:11.073870
+4	['build/maxisign', 'verify', '/tmp/tmpw9gy1ttw']	Time from after program startup until after verification result has been emitted	0.161	True	verify	maxisign	10240.0	2021-08-23 08:34:11.157344
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.447	True	sign	maxisign	102400.0	2021-08-23 08:34:11.244492
+6	['build/maxisign', 'verify', '/tmp/tmpz5kq493w']	Time from after program startup until after verification result has been emitted	0.539	True	verify	maxisign	102400.0	2021-08-23 08:34:11.333301
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.091	True	sign	maxisign	524288.0	2021-08-23 08:34:11.432812
+8	['build/maxisign', 'verify', '/tmp/tmpjajr42vx']	Time from after program startup until after verification result has been emitted	1.992	True	verify	maxisign	524288.0	2021-08-23 08:34:11.517341
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.493	True	sign	maxisign	1048576.0	2021-08-23 08:34:11.632140
+10	['build/maxisign', 'verify', '/tmp/tmpymqrnetb']	Time from after program startup until after verification result has been emitted	3.808	True	verify	maxisign	1048576.0	2021-08-23 08:34:11.721328
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.615	True	sign	maxisign	4194304.0	2021-08-23 08:34:11.934401
+12	['build/maxisign', 'verify', '/tmp/tmp4yox6kbs']	Time from after program startup until after verification result has been emitted	14.56	True	verify	maxisign	4194304.0	2021-08-23 08:34:12.045330
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.639	True	sign	maxisign	8388608.0	2021-08-23 08:34:12.386856
+14	['build/maxisign', 'verify', '/tmp/tmpzz8pcaxm']	Time from after program startup until after verification result has been emitted	29.095	True	verify	maxisign	8388608.0	2021-08-23 08:34:12.525342
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.596	True	sign	maxisign	12582912.0	2021-08-23 08:34:13.004994
+16	['build/maxisign', 'verify', '/tmp/tmpcxhoezmk']	Time from after program startup until after verification result has been emitted	43.405	True	verify	maxisign	12582912.0	2021-08-23 08:34:13.169323
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.099	False	genkey	maxisign		2021-08-23 08:34:13.299213
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.082	False	sign	maxisign	1024.0	2021-08-23 08:34:13.301834
+2	['target/release/maxisign', 'verify', '/tmp/tmpt6770915']	Time from after program startup until after verification result has been emitted	0.108	False	verify	maxisign	1024.0	2021-08-23 08:34:13.303961
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.125	False	sign	maxisign	10240.0	2021-08-23 08:34:13.306592
+4	['target/release/maxisign', 'verify', '/tmp/tmprb8rtst6']	Time from after program startup until after verification result has been emitted	0.133	False	verify	maxisign	10240.0	2021-08-23 08:34:13.308713
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.669	False	sign	maxisign	102400.0	2021-08-23 08:34:13.314023
+6	['target/release/maxisign', 'verify', '/tmp/tmpwy1bxauf']	Time from after program startup until after verification result has been emitted	0.49	False	verify	maxisign	102400.0	2021-08-23 08:34:13.316688
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.921	False	sign	maxisign	524288.0	2021-08-23 08:34:13.334784
+8	['target/release/maxisign', 'verify', '/tmp/tmpax4srjnc']	Time from after program startup until after verification result has been emitted	1.856	False	verify	maxisign	524288.0	2021-08-23 08:34:13.339746
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.761	False	sign	maxisign	1048576.0	2021-08-23 08:34:13.374542
+10	['target/release/maxisign', 'verify', '/tmp/tmpy2ge27w_']	Time from after program startup until after verification result has been emitted	3.611	False	verify	maxisign	1048576.0	2021-08-23 08:34:13.382392
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.119	False	sign	maxisign	4194304.0	2021-08-23 08:34:13.510959
+12	['target/release/maxisign', 'verify', '/tmp/tmp444vmczn']	Time from after program startup until after verification result has been emitted	14.405	False	verify	maxisign	4194304.0	2021-08-23 08:34:13.536453
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.964	False	sign	maxisign	8388608.0	2021-08-23 08:34:13.798378
+14	['target/release/maxisign', 'verify', '/tmp/tmp06yl0n5m']	Time from after program startup until after verification result has been emitted	28.835	False	verify	maxisign	8388608.0	2021-08-23 08:34:13.847064
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.046	False	sign	maxisign	12582912.0	2021-08-23 08:34:14.246033
+16	['target/release/maxisign', 'verify', '/tmp/tmpa_q0aq2m']	Time from after program startup until after verification result has been emitted	43.37	False	verify	maxisign	12582912.0	2021-08-23 08:34:14.318106
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.689	True	genkey	maxisign		2021-08-23 08:34:14.370290
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.687	True	sign	maxisign	1024.0	2021-08-23 08:34:14.453602
+2	['build/maxisign', 'verify', '/tmp/tmpeamtgsz4']	Time from after program startup until after verification result has been emitted	0.123	True	verify	maxisign	1024.0	2021-08-23 08:34:14.537353
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.739	True	sign	maxisign	10240.0	2021-08-23 08:34:14.621898
+4	['build/maxisign', 'verify', '/tmp/tmpc1r5e36_']	Time from after program startup until after verification result has been emitted	0.157	True	verify	maxisign	10240.0	2021-08-23 08:34:14.705360
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.451	True	sign	maxisign	102400.0	2021-08-23 08:34:14.792497
+6	['build/maxisign', 'verify', '/tmp/tmpdxybpvhj']	Time from after program startup until after verification result has been emitted	0.596	True	verify	maxisign	102400.0	2021-08-23 08:34:14.881344
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.128	True	sign	maxisign	524288.0	2021-08-23 08:34:14.980851
+8	['build/maxisign', 'verify', '/tmp/tmpmdgdi81w']	Time from after program startup until after verification result has been emitted	2.042	True	verify	maxisign	524288.0	2021-08-23 08:34:15.065336
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.445	True	sign	maxisign	1048576.0	2021-08-23 08:34:15.180212
+10	['build/maxisign', 'verify', '/tmp/tmplx2if1_p']	Time from after program startup until after verification result has been emitted	3.827	True	verify	maxisign	1048576.0	2021-08-23 08:34:15.269345
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.645	True	sign	maxisign	4194304.0	2021-08-23 08:34:15.482451
+12	['build/maxisign', 'verify', '/tmp/tmpmx1bttgr']	Time from after program startup until after verification result has been emitted	14.615	True	verify	maxisign	4194304.0	2021-08-23 08:34:15.593361
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.546	True	sign	maxisign	8388608.0	2021-08-23 08:34:15.934560
+14	['build/maxisign', 'verify', '/tmp/tmpjcivv04b']	Time from after program startup until after verification result has been emitted	28.955	True	verify	maxisign	8388608.0	2021-08-23 08:34:16.073337
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.967	True	sign	maxisign	12582912.0	2021-08-23 08:34:16.553120
+16	['build/maxisign', 'verify', '/tmp/tmpoayt7xur']	Time from after program startup until after verification result has been emitted	43.21	True	verify	maxisign	12582912.0	2021-08-23 08:34:16.717351
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.097	False	genkey	maxisign		2021-08-23 08:34:16.851225
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.083	False	sign	maxisign	1024.0	2021-08-23 08:34:16.853907
+2	['target/release/maxisign', 'verify', '/tmp/tmp5hffolse']	Time from after program startup until after verification result has been emitted	0.11	False	verify	maxisign	1024.0	2021-08-23 08:34:16.856091
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.128	False	sign	maxisign	10240.0	2021-08-23 08:34:16.858749
+4	['target/release/maxisign', 'verify', '/tmp/tmpks7opk4_']	Time from after program startup until after verification result has been emitted	0.13	False	verify	maxisign	10240.0	2021-08-23 08:34:16.860876
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.671	False	sign	maxisign	102400.0	2021-08-23 08:34:16.866228
+6	['target/release/maxisign', 'verify', '/tmp/tmp07acu8jv']	Time from after program startup until after verification result has been emitted	0.486	False	verify	maxisign	102400.0	2021-08-23 08:34:16.868928
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.908	False	sign	maxisign	524288.0	2021-08-23 08:34:16.887042
+8	['target/release/maxisign', 'verify', '/tmp/tmp9wxbjpgb']	Time from after program startup until after verification result has been emitted	1.871	False	verify	maxisign	524288.0	2021-08-23 08:34:16.892016
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.759	False	sign	maxisign	1048576.0	2021-08-23 08:34:16.926889
+10	['target/release/maxisign', 'verify', '/tmp/tmp0wifnkpe']	Time from after program startup until after verification result has been emitted	3.662	False	verify	maxisign	1048576.0	2021-08-23 08:34:16.934763
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.092	False	sign	maxisign	4194304.0	2021-08-23 08:34:17.063493
+12	['target/release/maxisign', 'verify', '/tmp/tmpjoftbyib']	Time from after program startup until after verification result has been emitted	14.388	False	verify	maxisign	4194304.0	2021-08-23 08:34:17.088981
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.119	False	sign	maxisign	8388608.0	2021-08-23 08:34:17.351136
+14	['target/release/maxisign', 'verify', '/tmp/tmp_58p71u_']	Time from after program startup until after verification result has been emitted	28.638	False	verify	maxisign	8388608.0	2021-08-23 08:34:17.399978
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.228	False	sign	maxisign	12582912.0	2021-08-23 08:34:17.799333
+16	['target/release/maxisign', 'verify', '/tmp/tmpj8zz4fws']	Time from after program startup until after verification result has been emitted	43.041	False	verify	maxisign	12582912.0	2021-08-23 08:34:17.871618
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.714	True	genkey	maxisign		2021-08-23 08:34:17.923541
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.673	True	sign	maxisign	1024.0	2021-08-23 08:34:18.005595
+2	['build/maxisign', 'verify', '/tmp/tmpy4kkl1wb']	Time from after program startup until after verification result has been emitted	0.127	True	verify	maxisign	1024.0	2021-08-23 08:34:18.089376
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.741	True	sign	maxisign	10240.0	2021-08-23 08:34:18.173856
+4	['build/maxisign', 'verify', '/tmp/tmpsouo560j']	Time from after program startup until after verification result has been emitted	0.156	True	verify	maxisign	10240.0	2021-08-23 08:34:18.257368
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.436	True	sign	maxisign	102400.0	2021-08-23 08:34:18.344523
+6	['build/maxisign', 'verify', '/tmp/tmp554k5bd9']	Time from after program startup until after verification result has been emitted	0.588	True	verify	maxisign	102400.0	2021-08-23 08:34:18.433360
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.126	True	sign	maxisign	524288.0	2021-08-23 08:34:18.532886
+8	['build/maxisign', 'verify', '/tmp/tmpfkbqwvnn']	Time from after program startup until after verification result has been emitted	2.036	True	verify	maxisign	524288.0	2021-08-23 08:34:18.621363
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.441	True	sign	maxisign	1048576.0	2021-08-23 08:34:18.740331
+10	['build/maxisign', 'verify', '/tmp/tmpwmc_b8cp']	Time from after program startup until after verification result has been emitted	3.788	True	verify	maxisign	1048576.0	2021-08-23 08:34:18.829342
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.616	True	sign	maxisign	4194304.0	2021-08-23 08:34:19.043174
+12	['build/maxisign', 'verify', '/tmp/tmpe2ulrezp']	Time from after program startup until after verification result has been emitted	14.484	True	verify	maxisign	4194304.0	2021-08-23 08:34:19.153368
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.501	True	sign	maxisign	8388608.0	2021-08-23 08:34:19.503557
+14	['build/maxisign', 'verify', '/tmp/tmp2tz_2rrf']	Time from after program startup until after verification result has been emitted	28.906	True	verify	maxisign	8388608.0	2021-08-23 08:34:19.641365
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.77	True	sign	maxisign	12582912.0	2021-08-23 08:34:20.122481
+16	['build/maxisign', 'verify', '/tmp/tmp8ufdlf87']	Time from after program startup until after verification result has been emitted	43.163	True	verify	maxisign	12582912.0	2021-08-23 08:34:20.285347
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.097	False	genkey	maxisign		2021-08-23 08:34:20.419346
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.084	False	sign	maxisign	1024.0	2021-08-23 08:34:20.422054
+2	['target/release/maxisign', 'verify', '/tmp/tmph_415tid']	Time from after program startup until after verification result has been emitted	0.106	False	verify	maxisign	1024.0	2021-08-23 08:34:20.424238
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.126	False	sign	maxisign	10240.0	2021-08-23 08:34:20.426926
+4	['target/release/maxisign', 'verify', '/tmp/tmpkcylqrz_']	Time from after program startup until after verification result has been emitted	0.131	False	verify	maxisign	10240.0	2021-08-23 08:34:20.429102
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.672	False	sign	maxisign	102400.0	2021-08-23 08:34:20.434529
+6	['target/release/maxisign', 'verify', '/tmp/tmp980a1apw']	Time from after program startup until after verification result has been emitted	0.49	False	verify	maxisign	102400.0	2021-08-23 08:34:20.437274
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.903	False	sign	maxisign	524288.0	2021-08-23 08:34:20.455462
+8	['target/release/maxisign', 'verify', '/tmp/tmpyivfa5xe']	Time from after program startup until after verification result has been emitted	1.855	False	verify	maxisign	524288.0	2021-08-23 08:34:20.460480
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.781	False	sign	maxisign	1048576.0	2021-08-23 08:34:20.495507
+10	['target/release/maxisign', 'verify', '/tmp/tmpoohr85x2']	Time from after program startup until after verification result has been emitted	3.655	False	verify	maxisign	1048576.0	2021-08-23 08:34:20.503462
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.07	False	sign	maxisign	4194304.0	2021-08-23 08:34:20.632715
+12	['target/release/maxisign', 'verify', '/tmp/tmpqm2ojcae']	Time from after program startup until after verification result has been emitted	14.337	False	verify	maxisign	4194304.0	2021-08-23 08:34:20.658221
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.048	False	sign	maxisign	8388608.0	2021-08-23 08:34:20.921927
+14	['target/release/maxisign', 'verify', '/tmp/tmp2wqlxtqo']	Time from after program startup until after verification result has been emitted	28.81	False	verify	maxisign	8388608.0	2021-08-23 08:34:20.970742
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.213	False	sign	maxisign	12582912.0	2021-08-23 08:34:21.371053
+16	['target/release/maxisign', 'verify', '/tmp/tmp7rgq1aqm']	Time from after program startup until after verification result has been emitted	43.024	False	verify	maxisign	12582912.0	2021-08-23 08:34:21.443359
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.711	True	genkey	maxisign		2021-08-23 08:34:21.495340
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.684	True	sign	maxisign	1024.0	2021-08-23 08:34:21.577567
+2	['build/maxisign', 'verify', '/tmp/tmp14uvcms3']	Time from after program startup until after verification result has been emitted	0.13	True	verify	maxisign	1024.0	2021-08-23 08:34:21.661367
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.742	True	sign	maxisign	10240.0	2021-08-23 08:34:21.745873
+4	['build/maxisign', 'verify', '/tmp/tmp9tc0apke']	Time from after program startup until after verification result has been emitted	0.15	True	verify	maxisign	10240.0	2021-08-23 08:34:21.829374
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.47	True	sign	maxisign	102400.0	2021-08-23 08:34:21.916563
+6	['build/maxisign', 'verify', '/tmp/tmpgzqlhi8_']	Time from after program startup until after verification result has been emitted	0.555	True	verify	maxisign	102400.0	2021-08-23 08:34:22.005395
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.119	True	sign	maxisign	524288.0	2021-08-23 08:34:22.104951
+8	['build/maxisign', 'verify', '/tmp/tmp4_a1z1yh']	Time from after program startup until after verification result has been emitted	2.035	True	verify	maxisign	524288.0	2021-08-23 08:34:22.193323
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.449	True	sign	maxisign	1048576.0	2021-08-23 08:34:22.308359
+10	['build/maxisign', 'verify', '/tmp/tmptv7hd1sk']	Time from after program startup until after verification result has been emitted	3.832	True	verify	maxisign	1048576.0	2021-08-23 08:34:22.397355
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.748	True	sign	maxisign	4194304.0	2021-08-23 08:34:22.611113
+12	['build/maxisign', 'verify', '/tmp/tmput3mywwc']	Time from after program startup until after verification result has been emitted	14.674	True	verify	maxisign	4194304.0	2021-08-23 08:34:22.721379
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.64	True	sign	maxisign	8388608.0	2021-08-23 08:34:23.070164
+14	['build/maxisign', 'verify', '/tmp/tmp5y9820y7']	Time from after program startup until after verification result has been emitted	29.025	True	verify	maxisign	8388608.0	2021-08-23 08:34:23.209362
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.773	True	sign	maxisign	12582912.0	2021-08-23 08:34:23.690231
+16	['build/maxisign', 'verify', '/tmp/tmpwzo2c_6u']	Time from after program startup until after verification result has been emitted	43.369	True	verify	maxisign	12582912.0	2021-08-23 08:34:23.853355
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.096	False	genkey	maxisign		2021-08-23 08:34:23.987356
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.083	False	sign	maxisign	1024.0	2021-08-23 08:34:23.990080
+2	['target/release/maxisign', 'verify', '/tmp/tmpmwklc63e']	Time from after program startup until after verification result has been emitted	0.105	False	verify	maxisign	1024.0	2021-08-23 08:34:23.992282
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.126	False	sign	maxisign	10240.0	2021-08-23 08:34:23.995006
+4	['target/release/maxisign', 'verify', '/tmp/tmp9aa9s4he']	Time from after program startup until after verification result has been emitted	0.129	False	verify	maxisign	10240.0	2021-08-23 08:34:23.997223
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.665	False	sign	maxisign	102400.0	2021-08-23 08:34:24.002676
+6	['target/release/maxisign', 'verify', '/tmp/tmpf84htlli']	Time from after program startup until after verification result has been emitted	0.487	False	verify	maxisign	102400.0	2021-08-23 08:34:24.005467
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.899	False	sign	maxisign	524288.0	2021-08-23 08:34:24.023623
+8	['target/release/maxisign', 'verify', '/tmp/tmpmjeia2i3']	Time from after program startup until after verification result has been emitted	1.863	False	verify	maxisign	524288.0	2021-08-23 08:34:24.028651
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.775	False	sign	maxisign	1048576.0	2021-08-23 08:34:24.063669
+10	['target/release/maxisign', 'verify', '/tmp/tmp7q5ac2fp']	Time from after program startup until after verification result has been emitted	3.629	False	verify	maxisign	1048576.0	2021-08-23 08:34:24.071638
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.045	False	sign	maxisign	4194304.0	2021-08-23 08:34:24.200675
+12	['target/release/maxisign', 'verify', '/tmp/tmpv2r3lhe2']	Time from after program startup until after verification result has been emitted	14.423	False	verify	maxisign	4194304.0	2021-08-23 08:34:24.226164
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.016	False	sign	maxisign	8388608.0	2021-08-23 08:34:24.489080
+14	['target/release/maxisign', 'verify', '/tmp/tmpm0e0fz58']	Time from after program startup until after verification result has been emitted	28.856	False	verify	maxisign	8388608.0	2021-08-23 08:34:24.537887
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.017	False	sign	maxisign	12582912.0	2021-08-23 08:34:24.938057
+16	['target/release/maxisign', 'verify', '/tmp/tmp6vh8bd2x']	Time from after program startup until after verification result has been emitted	43.559	False	verify	maxisign	12582912.0	2021-08-23 08:34:25.010175
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.702	True	genkey	maxisign		2021-08-23 08:34:25.062763
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.692	True	sign	maxisign	1024.0	2021-08-23 08:34:25.145653
+2	['build/maxisign', 'verify', '/tmp/tmpwd3d7w65']	Time from after program startup until after verification result has been emitted	0.13	True	verify	maxisign	1024.0	2021-08-23 08:34:25.229383
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.75	True	sign	maxisign	10240.0	2021-08-23 08:34:25.313913
+4	['build/maxisign', 'verify', '/tmp/tmpgv3v0iq2']	Time from after program startup until after verification result has been emitted	0.158	True	verify	maxisign	10240.0	2021-08-23 08:34:25.397418
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.448	True	sign	maxisign	102400.0	2021-08-23 08:34:25.484574
+6	['build/maxisign', 'verify', '/tmp/tmphatr3lz7']	Time from after program startup until after verification result has been emitted	0.592	True	verify	maxisign	102400.0	2021-08-23 08:34:25.573408
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.128	True	sign	maxisign	524288.0	2021-08-23 08:34:25.672941
+8	['build/maxisign', 'verify', '/tmp/tmpu4_6a15x']	Time from after program startup until after verification result has been emitted	2.05	True	verify	maxisign	524288.0	2021-08-23 08:34:25.761389
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.402	True	sign	maxisign	1048576.0	2021-08-23 08:34:25.876341
+10	['build/maxisign', 'verify', '/tmp/tmp2razmxb5']	Time from after program startup until after verification result has been emitted	3.801	True	verify	maxisign	1048576.0	2021-08-23 08:34:25.965360
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.676	True	sign	maxisign	4194304.0	2021-08-23 08:34:26.179071
+12	['build/maxisign', 'verify', '/tmp/tmpmyc15rw1']	Time from after program startup until after verification result has been emitted	14.653	True	verify	maxisign	4194304.0	2021-08-23 08:34:26.289394
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.637	True	sign	maxisign	8388608.0	2021-08-23 08:34:26.635675
+14	['build/maxisign', 'verify', '/tmp/tmpohod0xph']	Time from after program startup until after verification result has been emitted	28.98	True	verify	maxisign	8388608.0	2021-08-23 08:34:26.773392
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.88	True	sign	maxisign	12582912.0	2021-08-23 08:34:27.254457
+16	['build/maxisign', 'verify', '/tmp/tmpq52h3f5f']	Time from after program startup until after verification result has been emitted	43.332	True	verify	maxisign	12582912.0	2021-08-23 08:34:27.417383
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.099	False	genkey	maxisign		2021-08-23 08:34:27.551381
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.083	False	sign	maxisign	1024.0	2021-08-23 08:34:27.554155
+2	['target/release/maxisign', 'verify', '/tmp/tmpqpdvbnfa']	Time from after program startup until after verification result has been emitted	0.107	False	verify	maxisign	1024.0	2021-08-23 08:34:27.556383
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.126	False	sign	maxisign	10240.0	2021-08-23 08:34:27.559125
+4	['target/release/maxisign', 'verify', '/tmp/tmpshmqfiso']	Time from after program startup until after verification result has been emitted	0.132	False	verify	maxisign	10240.0	2021-08-23 08:34:27.561384
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.674	False	sign	maxisign	102400.0	2021-08-23 08:34:27.566823
+6	['target/release/maxisign', 'verify', '/tmp/tmp2u40pic3']	Time from after program startup until after verification result has been emitted	0.491	False	verify	maxisign	102400.0	2021-08-23 08:34:27.569640
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.923	False	sign	maxisign	524288.0	2021-08-23 08:34:27.587933
+8	['target/release/maxisign', 'verify', '/tmp/tmpr_poz3yj']	Time from after program startup until after verification result has been emitted	1.859	False	verify	maxisign	524288.0	2021-08-23 08:34:27.592958
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.781	False	sign	maxisign	1048576.0	2021-08-23 08:34:27.627963
+10	['target/release/maxisign', 'verify', '/tmp/tmphyvjqay2']	Time from after program startup until after verification result has been emitted	3.646	False	verify	maxisign	1048576.0	2021-08-23 08:34:27.635980
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.073	False	sign	maxisign	4194304.0	2021-08-23 08:34:27.765253
+12	['target/release/maxisign', 'verify', '/tmp/tmp1a11nt28']	Time from after program startup until after verification result has been emitted	14.516	False	verify	maxisign	4194304.0	2021-08-23 08:34:27.790842
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.081	False	sign	maxisign	8388608.0	2021-08-23 08:34:28.054059
+14	['target/release/maxisign', 'verify', '/tmp/tmpvmtbauik']	Time from after program startup until after verification result has been emitted	28.868	False	verify	maxisign	8388608.0	2021-08-23 08:34:28.102977
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.202	False	sign	maxisign	12582912.0	2021-08-23 08:34:28.503695
+16	['target/release/maxisign', 'verify', '/tmp/tmplqdrw56g']	Time from after program startup until after verification result has been emitted	42.995	False	verify	maxisign	12582912.0	2021-08-23 08:34:28.576051
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.715	True	genkey	maxisign		2021-08-23 08:34:28.628151
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.677	True	sign	maxisign	1024.0	2021-08-23 08:34:28.713673
+2	['build/maxisign', 'verify', '/tmp/tmpy3f3lrbs']	Time from after program startup until after verification result has been emitted	0.128	True	verify	maxisign	1024.0	2021-08-23 08:34:28.797417
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.733	True	sign	maxisign	10240.0	2021-08-23 08:34:28.881904
+4	['build/maxisign', 'verify', '/tmp/tmppmmedf69']	Time from after program startup until after verification result has been emitted	0.157	True	verify	maxisign	10240.0	2021-08-23 08:34:28.965386
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.467	True	sign	maxisign	102400.0	2021-08-23 08:34:29.052573
+6	['build/maxisign', 'verify', '/tmp/tmpxtollxqo']	Time from after program startup until after verification result has been emitted	0.594	True	verify	maxisign	102400.0	2021-08-23 08:34:29.141427
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.138	True	sign	maxisign	524288.0	2021-08-23 08:34:29.240985
+8	['build/maxisign', 'verify', '/tmp/tmp2q1rdtif']	Time from after program startup until after verification result has been emitted	2.014	True	verify	maxisign	524288.0	2021-08-23 08:34:29.329375
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.457	True	sign	maxisign	1048576.0	2021-08-23 08:34:29.444365
+10	['build/maxisign', 'verify', '/tmp/tmpzc7ygsez']	Time from after program startup until after verification result has been emitted	3.779	True	verify	maxisign	1048576.0	2021-08-23 08:34:29.533380
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.658	True	sign	maxisign	4194304.0	2021-08-23 08:34:29.747123
+12	['build/maxisign', 'verify', '/tmp/tmpqlcvsrj1']	Time from after program startup until after verification result has been emitted	14.564	True	verify	maxisign	4194304.0	2021-08-23 08:34:29.857399
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.704	True	sign	maxisign	8388608.0	2021-08-23 08:34:30.199826
+14	['build/maxisign', 'verify', '/tmp/tmp_shn_kwm']	Time from after program startup until after verification result has been emitted	28.917	True	verify	maxisign	8388608.0	2021-08-23 08:34:30.337400
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.909	True	sign	maxisign	12582912.0	2021-08-23 08:34:30.818386
+16	['build/maxisign', 'verify', '/tmp/tmpay40w06j']	Time from after program startup until after verification result has been emitted	43.296	True	verify	maxisign	12582912.0	2021-08-23 08:34:30.985396
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.096	False	genkey	maxisign		2021-08-23 08:34:31.119357
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.088	False	sign	maxisign	1024.0	2021-08-23 08:34:31.122148
+2	['target/release/maxisign', 'verify', '/tmp/tmpz6svbisl']	Time from after program startup until after verification result has been emitted	0.113	False	verify	maxisign	1024.0	2021-08-23 08:34:31.124463
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.126	False	sign	maxisign	10240.0	2021-08-23 08:34:31.127219
+4	['target/release/maxisign', 'verify', '/tmp/tmpu65_r5n8']	Time from after program startup until after verification result has been emitted	0.13	False	verify	maxisign	10240.0	2021-08-23 08:34:31.129508
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.675	False	sign	maxisign	102400.0	2021-08-23 08:34:31.135034
+6	['target/release/maxisign', 'verify', '/tmp/tmproi6scb3']	Time from after program startup until after verification result has been emitted	0.49	False	verify	maxisign	102400.0	2021-08-23 08:34:31.137883
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.911	False	sign	maxisign	524288.0	2021-08-23 08:34:31.156277
+8	['target/release/maxisign', 'verify', '/tmp/tmpdmikjcg_']	Time from after program startup until after verification result has been emitted	1.874	False	verify	maxisign	524288.0	2021-08-23 08:34:31.161388
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.764	False	sign	maxisign	1048576.0	2021-08-23 08:34:31.196462
+10	['target/release/maxisign', 'verify', '/tmp/tmp8_d022x9']	Time from after program startup until after verification result has been emitted	3.653	False	verify	maxisign	1048576.0	2021-08-23 08:34:31.204503
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.136	False	sign	maxisign	4194304.0	2021-08-23 08:34:31.333652
+12	['target/release/maxisign', 'verify', '/tmp/tmpelzttde3']	Time from after program startup until after verification result has been emitted	14.52	False	verify	maxisign	4194304.0	2021-08-23 08:34:31.359315
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.155	False	sign	maxisign	8388608.0	2021-08-23 08:34:31.622625
+14	['target/release/maxisign', 'verify', '/tmp/tmp2tblap4s']	Time from after program startup until after verification result has been emitted	28.875	False	verify	maxisign	8388608.0	2021-08-23 08:34:31.671622
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.333	False	sign	maxisign	12582912.0	2021-08-23 08:34:32.072432
+16	['target/release/maxisign', 'verify', '/tmp/tmpcuntp8jw']	Time from after program startup until after verification result has been emitted	43.035	False	verify	maxisign	12582912.0	2021-08-23 08:34:32.144941
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.715	True	genkey	maxisign		2021-08-23 08:34:32.197090
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.691	True	sign	maxisign	1024.0	2021-08-23 08:34:32.281696
+2	['build/maxisign', 'verify', '/tmp/tmp4afu8l65']	Time from after program startup until after verification result has been emitted	0.123	True	verify	maxisign	1024.0	2021-08-23 08:34:32.365423
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.744	True	sign	maxisign	10240.0	2021-08-23 08:34:32.449923
+4	['build/maxisign', 'verify', '/tmp/tmp581lt26c']	Time from after program startup until after verification result has been emitted	0.155	True	verify	maxisign	10240.0	2021-08-23 08:34:32.537409
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.462	True	sign	maxisign	102400.0	2021-08-23 08:34:32.624583
+6	['build/maxisign', 'verify', '/tmp/tmpvo3zf0js']	Time from after program startup until after verification result has been emitted	0.589	True	verify	maxisign	102400.0	2021-08-23 08:34:32.709399
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.117	True	sign	maxisign	524288.0	2021-08-23 08:34:32.808955
+8	['build/maxisign', 'verify', '/tmp/tmp2khzjypo']	Time from after program startup until after verification result has been emitted	2.039	True	verify	maxisign	524288.0	2021-08-23 08:34:32.897413
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.455	True	sign	maxisign	1048576.0	2021-08-23 08:34:33.012379
+10	['build/maxisign', 'verify', '/tmp/tmp_ticrqt1']	Time from after program startup until after verification result has been emitted	3.833	True	verify	maxisign	1048576.0	2021-08-23 08:34:33.101411
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.627	True	sign	maxisign	4194304.0	2021-08-23 08:34:33.315127
+12	['build/maxisign', 'verify', '/tmp/tmpgr8qw1vu']	Time from after program startup until after verification result has been emitted	14.576	True	verify	maxisign	4194304.0	2021-08-23 08:34:33.425393
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.741	True	sign	maxisign	8388608.0	2021-08-23 08:34:33.767518
+14	['build/maxisign', 'verify', '/tmp/tmpcqi6f5xj']	Time from after program startup until after verification result has been emitted	28.98	True	verify	maxisign	8388608.0	2021-08-23 08:34:33.905414
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.643	True	sign	maxisign	12582912.0	2021-08-23 08:34:34.386704
+16	['build/maxisign', 'verify', '/tmp/tmpf6n5_meu']	Time from after program startup until after verification result has been emitted	43.557	True	verify	maxisign	12582912.0	2021-08-23 08:34:34.549398
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.098	False	genkey	maxisign		2021-08-23 08:34:34.683437
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.081	False	sign	maxisign	1024.0	2021-08-23 08:34:34.686235
+2	['target/release/maxisign', 'verify', '/tmp/tmpwek5czpm']	Time from after program startup until after verification result has been emitted	0.11	False	verify	maxisign	1024.0	2021-08-23 08:34:34.688533
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.124	False	sign	maxisign	10240.0	2021-08-23 08:34:34.691341
+4	['target/release/maxisign', 'verify', '/tmp/tmpvjk2rnol']	Time from after program startup until after verification result has been emitted	0.132	False	verify	maxisign	10240.0	2021-08-23 08:34:34.693625
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.663	False	sign	maxisign	102400.0	2021-08-23 08:34:34.699191
+6	['target/release/maxisign', 'verify', '/tmp/tmpwsnasiaf']	Time from after program startup until after verification result has been emitted	0.449	False	verify	maxisign	102400.0	2021-08-23 08:34:34.701990
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.902	False	sign	maxisign	524288.0	2021-08-23 08:34:34.720424
+8	['target/release/maxisign', 'verify', '/tmp/tmpc_uv377z']	Time from after program startup until after verification result has been emitted	1.858	False	verify	maxisign	524288.0	2021-08-23 08:34:34.725501
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.764	False	sign	maxisign	1048576.0	2021-08-23 08:34:34.760648
+10	['target/release/maxisign', 'verify', '/tmp/tmpxao6qos2']	Time from after program startup until after verification result has been emitted	3.637	False	verify	maxisign	1048576.0	2021-08-23 08:34:34.768710
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	23.085	False	sign	maxisign	4194304.0	2021-08-23 08:34:34.897971
+12	['target/release/maxisign', 'verify', '/tmp/tmp3eqbym4v']	Time from after program startup until after verification result has been emitted	14.432	False	verify	maxisign	4194304.0	2021-08-23 08:34:34.923623
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	46.03	False	sign	maxisign	8388608.0	2021-08-23 08:34:35.186860
+14	['target/release/maxisign', 'verify', '/tmp/tmpamy2xheq']	Time from after program startup until after verification result has been emitted	28.799	False	verify	maxisign	8388608.0	2021-08-23 08:34:35.235770
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.093	False	sign	maxisign	12582912.0	2021-08-23 08:34:35.636433
+16	['target/release/maxisign', 'verify', '/tmp/tmpgbd4n4ys']	Time from after program startup until after verification result has been emitted	43.154	False	verify	maxisign	12582912.0	2021-08-23 08:34:35.708784
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.714	True	genkey	maxisign		2021-08-23 08:34:35.761108
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.688	True	sign	maxisign	1024.0	2021-08-23 08:34:35.845426
+2	['build/maxisign', 'verify', '/tmp/tmpo3mqm4s8']	Time from after program startup until after verification result has been emitted	0.131	True	verify	maxisign	1024.0	2021-08-23 08:34:35.929379
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.743	True	sign	maxisign	10240.0	2021-08-23 08:34:36.013927
+4	['build/maxisign', 'verify', '/tmp/tmpnvvznch8']	Time from after program startup until after verification result has been emitted	0.161	True	verify	maxisign	10240.0	2021-08-23 08:34:36.097436
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.469	True	sign	maxisign	102400.0	2021-08-23 08:34:36.184564
+6	['build/maxisign', 'verify', '/tmp/tmpyz27s6vr']	Time from after program startup until after verification result has been emitted	0.604	True	verify	maxisign	102400.0	2021-08-23 08:34:36.269367
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.071	True	sign	maxisign	524288.0	2021-08-23 08:34:36.369313
+8	['build/maxisign', 'verify', '/tmp/tmpb9anii_n']	Time from after program startup until after verification result has been emitted	2.037	True	verify	maxisign	524288.0	2021-08-23 08:34:36.457405
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.366	True	sign	maxisign	1048576.0	2021-08-23 08:34:36.571591
+10	['build/maxisign', 'verify', '/tmp/tmp6gor0ru9']	Time from after program startup until after verification result has been emitted	3.853	True	verify	maxisign	1048576.0	2021-08-23 08:34:36.661408
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.661	True	sign	maxisign	4194304.0	2021-08-23 08:34:36.871320
+12	['build/maxisign', 'verify', '/tmp/tmptr8zd1my']	Time from after program startup until after verification result has been emitted	14.611	True	verify	maxisign	4194304.0	2021-08-23 08:34:36.981421
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.542	True	sign	maxisign	8388608.0	2021-08-23 08:34:37.322793
+14	['build/maxisign', 'verify', '/tmp/tmpzn8pfnjj']	Time from after program startup until after verification result has been emitted	28.732	True	verify	maxisign	8388608.0	2021-08-23 08:34:37.461435
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.749	True	sign	maxisign	12582912.0	2021-08-23 08:34:37.931328
+16	['build/maxisign', 'verify', '/tmp/tmpk59p46rl']	Time from after program startup until after verification result has been emitted	43.345	True	verify	maxisign	12582912.0	2021-08-23 08:34:38.097426
+0	['target/release/maxisign', 'genkey']	Time from after program startup to complete key generation	0.095	False	genkey	maxisign		2021-08-23 08:34:38.231438
+1	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.081	False	sign	maxisign	1024.0	2021-08-23 08:34:38.234262
+2	['target/release/maxisign', 'verify', '/tmp/tmp1x8k8v08']	Time from after program startup until after verification result has been emitted	0.109	False	verify	maxisign	1024.0	2021-08-23 08:34:38.236609
+3	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.126	False	sign	maxisign	10240.0	2021-08-23 08:34:38.239427
+4	['target/release/maxisign', 'verify', '/tmp/tmpti8cy889']	Time from after program startup until after verification result has been emitted	0.136	False	verify	maxisign	10240.0	2021-08-23 08:34:38.241766
+5	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.669	False	sign	maxisign	102400.0	2021-08-23 08:34:38.247223
+6	['target/release/maxisign', 'verify', '/tmp/tmpg6o7d0iu']	Time from after program startup until after verification result has been emitted	0.485	False	verify	maxisign	102400.0	2021-08-23 08:34:38.250096
+7	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	2.921	False	sign	maxisign	524288.0	2021-08-23 08:34:38.268108
+8	['target/release/maxisign', 'verify', '/tmp/tmpe4upvvms']	Time from after program startup until after verification result has been emitted	1.861	False	verify	maxisign	524288.0	2021-08-23 08:34:38.273265
+9	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	5.764	False	sign	maxisign	1048576.0	2021-08-23 08:34:38.307614
+10	['target/release/maxisign', 'verify', '/tmp/tmplwj6sbyx']	Time from after program startup until after verification result has been emitted	3.644	False	verify	maxisign	1048576.0	2021-08-23 08:34:38.315669
+11	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	22.99	False	sign	maxisign	4194304.0	2021-08-23 08:34:38.441409
+12	['target/release/maxisign', 'verify', '/tmp/tmpb7qlk5ps']	Time from after program startup until after verification result has been emitted	14.352	False	verify	maxisign	4194304.0	2021-08-23 08:34:38.466987
+13	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	45.862	False	sign	maxisign	8388608.0	2021-08-23 08:34:38.723227
+14	['target/release/maxisign', 'verify', '/tmp/tmpq6x7ag5g']	Time from after program startup until after verification result has been emitted	28.821	False	verify	maxisign	8388608.0	2021-08-23 08:34:38.771965
+15	['target/release/maxisign', 'sign']	Time from after program startup until after signature has been emitted	69.115	False	sign	maxisign	12582912.0	2021-08-23 08:34:39.161931
+16	['target/release/maxisign', 'verify', '/tmp/tmp7jpy_b86']	Time from after program startup until after verification result has been emitted	43.417	False	verify	maxisign	12582912.0	2021-08-23 08:34:39.234283
+0	['build/maxisign', 'genkey']	Time from after program startup to complete key generation	0.717	True	genkey	maxisign		2021-08-23 08:34:39.286862
+1	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.681	True	sign	maxisign	1024.0	2021-08-23 08:34:39.369687
+2	['build/maxisign', 'verify', '/tmp/tmpdlxly3wm']	Time from after program startup until after verification result has been emitted	0.13	True	verify	maxisign	1024.0	2021-08-23 08:34:39.453448
+3	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	0.737	True	sign	maxisign	10240.0	2021-08-23 08:34:39.537938
+4	['build/maxisign', 'verify', '/tmp/tmpi7xketn1']	Time from after program startup until after verification result has been emitted	0.156	True	verify	maxisign	10240.0	2021-08-23 08:34:39.621425
+5	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	1.473	True	sign	maxisign	102400.0	2021-08-23 08:34:39.708521
+6	['build/maxisign', 'verify', '/tmp/tmpao9cn3po']	Time from after program startup until after verification result has been emitted	0.575	True	verify	maxisign	102400.0	2021-08-23 08:34:39.793452
+7	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	4.148	True	sign	maxisign	524288.0	2021-08-23 08:34:39.892554
+8	['build/maxisign', 'verify', '/tmp/tmpn5d8nn4q']	Time from after program startup until after verification result has been emitted	2.005	True	verify	maxisign	524288.0	2021-08-23 08:34:39.981409
+9	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	7.437	True	sign	maxisign	1048576.0	2021-08-23 08:34:40.095563
+10	['build/maxisign', 'verify', '/tmp/tmpdw_bl2zn']	Time from after program startup until after verification result has been emitted	3.83	True	verify	maxisign	1048576.0	2021-08-23 08:34:40.185429
+11	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	27.503	True	sign	maxisign	4194304.0	2021-08-23 08:34:40.395836
+12	['build/maxisign', 'verify', '/tmp/tmpdp6sd7hu']	Time from after program startup until after verification result has been emitted	14.677	True	verify	maxisign	4194304.0	2021-08-23 08:34:40.505435
+13	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	54.417	True	sign	maxisign	8388608.0	2021-08-23 08:34:40.847738
+14	['build/maxisign', 'verify', '/tmp/tmpto38pl5o']	Time from after program startup until after verification result has been emitted	28.996	True	verify	maxisign	8388608.0	2021-08-23 08:34:40.985442
+15	['build/maxisign', 'sign']	Time from after program startup until after signature has been emitted	81.251	True	sign	maxisign	12582912.0	2021-08-23 08:34:41.460024
+16	['build/maxisign', 'verify', '/tmp/tmp7ez3zd50']	Time from after program startup until after verification result has been emitted	43.128	True	verify	maxisign	12582912.0	2021-08-23 08:34:41.625500
