@@ -23,7 +23,8 @@ Contents
   * "enclave.lds" is a linker script as recommended by Intel.
 
 ### Evaluation
-The code and tools used to perform performance evaluation for the thesis are provided on the "eval" branch of this repository.
+Everything related to the performance evaluation from the thesis is provided on the "eval" branch of this repository.
+That includes the code and tools as well as the raw results.
 
 Setup
 -----
