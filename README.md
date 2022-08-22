@@ -10,14 +10,15 @@ For details on the idea and its limitations, refer to [the paper](https://doi.or
 When referencing this work, please cite the paper:
 
 ```
-@inproceedings{
+@inproceedings{dreissig-2022,
   author = {Felix Dreissig and Jonas Röckl and Tilo Müller},
   title = {Compiler-Aided Development of Trusted Enclaves with Rust},
   booktitle = {Proceedings of the 17th International Conference on Availability, Reliability and Security},
-  series = {ARES 2022},
+  series = {ARES '22},
   publisher = {Association for Computing Machinery},
   date = {2022-08},
   location = {Vienna, Austria},
+  pages = {1--10},
   doi = {10.1145/3538969.3538972}
 }
 ```
