@@ -119,6 +119,8 @@ You might have to adjust some (hardcoded) paths to the ones of your local instal
 
 Copyright
 ---------
+Except otherwise noted, the code is licensed under the ISC license.
+
 The "llvm-patches" directory contains patch files to [LLVM project](https://github.com/llvm/llvm-project) code. LLVM consists of contributions from various authors, licensed under the Apache (Version 2.0) license with LLVM Exceptions and/or the Legacy LLVM license.
 
 The "rust-patches" directory contains patch files to [Rust](https://github.com/rust-lang/rust) code. Rust consists of contributions from various authors, dual-licensed under the Apache (Version 2.0) and MIT licenses.
