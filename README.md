@@ -1,12 +1,12 @@
 Cadote: Compiler-Aided Development of Trusted Enclaves
 ======================================================
 
-This is the code for [my Masters Thesis](https://www.f30.me/files/masters-thesis.pdf) and our ARES 2022 paper [*Compiler-Aided Development of Trusted Enclaves with Rust*](https://doi.org/10.1145/3538969.3538972).
+This is the code for [my Masters Thesis](https://www.f30.me/files/masters-thesis.pdf) and our ARES 2022 paper [*Compiler-Aided Development of Trusted Enclaves with Rust*](https://dl.acm.org/doi/10.1145/3538969.3538972?cid=99660549531).
 It is quite hacky research-grade code, where I had to go to the limit of what is possible with an LLVM pass.
 Also, there is quite some C++ code and I'm not much of a C++ programmer.
 Sorry about that.
 
-For details on the idea and its limitations, refer to [the paper](https://doi.org/10.1145/3538969.3538972) or [the thesis](https://www.f30.me/files/masters-thesis.pdf).
+For details on the idea and its limitations, refer to [the paper](https://dl.acm.org/doi/10.1145/3538969.3538972?cid=99660549531) or [the thesis](https://www.f30.me/files/masters-thesis.pdf).
 When referencing this work, please cite the paper:
 
 ```
